@@ -20,7 +20,17 @@ export default async function LocalizacaoPage() {
         </p>
       </div>
 
-      <div className="mt-14 aspect-[16/9] w-full rounded-sm bg-sand/50" aria-hidden="true" />
+      {siteSettings.googleMapsUrl ? (
+        <a
+          href={siteSettings.googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-ring mt-14 block aspect-[16/9] w-full rounded-sm bg-sand/50"
+          aria-label="Abrir localização no Google Maps"
+        />
+      ) : (
+        <div className="mt-14 aspect-[16/9] w-full rounded-sm bg-sand/50" aria-hidden="true" />
+      )}
     </div>
   );
 }

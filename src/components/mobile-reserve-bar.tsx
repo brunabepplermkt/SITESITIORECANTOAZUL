@@ -11,7 +11,17 @@ import { ReserveButton } from "./reserve-button";
  * inserida no DOM quando visível, para nunca deixar um link focável e
  * invisível na ordem de tabulação.
  */
-export function MobileReserveBar({ reserveUrl }: { reserveUrl: string }) {
+export function MobileReserveBar({
+  bookingActive,
+  href,
+  target,
+  label,
+}: {
+  bookingActive: boolean;
+  href: string;
+  target: "_self" | "_blank";
+  label: string;
+}) {
   const pathname = usePathname();
   const [pastHero, setPastHero] = useState(false);
   const [overFooter, setOverFooter] = useState(false);
@@ -37,15 +47,18 @@ export function MobileReserveBar({ reserveUrl }: { reserveUrl: string }) {
     };
   }, []);
 
-  if (pathname.startsWith("/admin") || !pastHero || overFooter) return null;
+  if (!bookingActive || pathname.startsWith("/admin") || !pastHero || overFooter) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
       <div className="mx-auto max-w-sm">
         <ReserveButton
-          href={reserveUrl}
+          href={href}
+          target={target}
           className="w-full shadow-[0_8px_24px_rgba(38,34,32,0.35)]"
-        />
+        >
+          {label}
+        </ReserveButton>
       </div>
     </div>
   );

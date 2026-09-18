@@ -5,10 +5,21 @@ import {
   accommodations as seedAccommodations,
   experiences as seedExperiences,
   faqs as seedFaqs,
+  homeSections as seedHomeSections,
   policiesContent as seedPolicies,
   siteSettings as seedSiteSettings,
 } from "@/lib/content";
-import type { Accommodation, CmsPage, Experience, FaqItem, NavPage, PageBlock, Review, SiteSettings } from "@/lib/types";
+import type {
+  Accommodation,
+  CmsPage,
+  Experience,
+  FaqItem,
+  HomeSection,
+  NavPage,
+  PageBlock,
+  Review,
+  SiteSettings,
+} from "@/lib/types";
 
 /**
  * Camada de leitura pública: tenta o Supabase e cai para o conteúdo seed
@@ -37,36 +48,73 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       email: data.email || seedSiteSettings.email,
       instagram: data.instagram || seedSiteSettings.instagram,
       address: data.address || seedSiteSettings.address,
+      googleMapsUrl: data.google_maps_url ?? null,
       defaultReserveUrl: data.default_reserve_url || seedSiteSettings.defaultReserveUrl,
+      seoTitle: data.seo_title ?? null,
+      seoDescription: data.seo_description ?? null,
+      ogImageUrl: data.og_image_url ?? null,
+      bookingProvider: data.booking_provider ?? seedSiteSettings.bookingProvider,
+      bookingBaseUrl: data.booking_base_url ?? null,
+      bookingOpenMode: data.booking_open_mode ?? seedSiteSettings.bookingOpenMode,
+      bookingCtaLabel: data.booking_cta_label || seedSiteSettings.bookingCtaLabel,
+      bookingShowSearchHome: data.booking_show_search_home ?? false,
+      bookingShowSearchAccommodation: data.booking_show_search_accommodation ?? false,
+      bookingShowCalendar: data.booking_show_calendar ?? false,
+      bookingWidgetEmbedUrl: data.booking_widget_embed_url ?? null,
+      googleAnalyticsId: data.google_analytics_id ?? null,
+      metaPixelId: data.meta_pixel_id ?? null,
     };
   } catch {
     return seedSiteSettings;
   }
 }
 
-export async function getAccommodations(): Promise<Accommodation[]> {
-  if (!isSupabaseConfigured()) return seedAccommodations;
+type AccommodationOpts = { includeUnpublished?: boolean };
+
+export async function getAccommodations(opts: AccommodationOpts = {}): Promise<Accommodation[]> {
+  if (!isSupabaseConfigured()) {
+    return opts.includeUnpublished ? seedAccommodations : seedAccommodations.filter((a) => a.published);
+  }
 
   try {
     const supabase = createPublicClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("accommodations")
       .select("*, accommodation_images(*)")
+      .order("home_order", { ascending: true })
       .order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) return seedAccommodations;
+    if (!opts.includeUnpublished) query = query.eq("published", true);
+
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      return opts.includeUnpublished ? seedAccommodations : seedAccommodations.filter((a) => a.published);
+    }
 
     return data.map(
       (row): Accommodation => ({
         slug: row.slug,
         name: row.name,
         tagline: row.tagline,
+        shortDescription: row.short_description || row.tagline,
         description: row.description,
         capacity: row.capacity,
+        adults: row.adults,
+        children: row.children,
+        beds: row.beds,
+        rooms: row.rooms,
+        bathrooms: row.bathrooms,
         priceFrom: row.price_from,
         highlights: row.highlights ?? [],
         amenities: row.amenities ?? [],
         reserveUrl: row.reserve_url || seedSiteSettings.defaultReserveUrl,
+        published: row.published,
+        featuredHome: row.featured_home,
+        homeOrder: row.home_order,
+        seoTitle: row.seo_title,
+        seoDescription: row.seo_description,
+        ogImageUrl: row.og_image_url,
         images: (row.accommodation_images ?? [])
           .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
           .map((img: { id: string; url: string; alt: string; order_index: number }) => ({
@@ -78,26 +126,35 @@ export async function getAccommodations(): Promise<Accommodation[]> {
       }),
     );
   } catch {
-    return seedAccommodations;
+    return opts.includeUnpublished ? seedAccommodations : seedAccommodations.filter((a) => a.published);
   }
 }
 
-export async function getAccommodation(slug: string): Promise<Accommodation | undefined> {
-  const list = await getAccommodations();
+export async function getAccommodation(
+  slug: string,
+  opts: AccommodationOpts = {},
+): Promise<Accommodation | undefined> {
+  const list = await getAccommodations(opts);
   return list.find((a) => a.slug === slug);
 }
 
-export async function getExperiences(): Promise<Experience[]> {
-  if (!isSupabaseConfigured()) return seedExperiences;
+type ExperienceOpts = { includeUnpublished?: boolean };
+
+export async function getExperiences(opts: ExperienceOpts = {}): Promise<Experience[]> {
+  if (!isSupabaseConfigured()) {
+    return opts.includeUnpublished ? seedExperiences : seedExperiences.filter((e) => e.published);
+  }
 
   try {
     const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from("experiences")
-      .select("*")
-      .order("order_index", { ascending: true });
+    let query = supabase.from("experiences").select("*").order("order_index", { ascending: true });
+    if (!opts.includeUnpublished) query = query.eq("published", true);
 
-    if (error || !data || data.length === 0) return seedExperiences;
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      return opts.includeUnpublished ? seedExperiences : seedExperiences.filter((e) => e.published);
+    }
 
     return data.map(
       (row): Experience => ({
@@ -105,28 +162,45 @@ export async function getExperiences(): Promise<Experience[]> {
         name: row.name,
         description: row.description,
         image: { id: row.slug, url: row.image_url, alt: row.image_alt, order: row.order_index },
+        published: row.published,
+        ctaLabel: row.cta_label,
+        ctaHref: row.cta_href,
       }),
     );
   } catch {
-    return seedExperiences;
+    return opts.includeUnpublished ? seedExperiences : seedExperiences.filter((e) => e.published);
   }
 }
 
-export async function getFaqs(): Promise<FaqItem[]> {
-  if (!isSupabaseConfigured()) return seedFaqs;
+type FaqOpts = { includeUnpublished?: boolean };
+
+export async function getFaqs(opts: FaqOpts = {}): Promise<FaqItem[]> {
+  if (!isSupabaseConfigured()) {
+    return opts.includeUnpublished ? seedFaqs : seedFaqs.filter((f) => f.published);
+  }
 
   try {
     const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from("faqs")
-      .select("*")
-      .order("order_index", { ascending: true });
+    let query = supabase.from("faqs").select("*").order("order_index", { ascending: true });
+    if (!opts.includeUnpublished) query = query.eq("published", true);
 
-    if (error || !data || data.length === 0) return seedFaqs;
+    const { data, error } = await query;
 
-    return data.map((row): FaqItem => ({ id: row.id, question: row.question, answer: row.answer }));
+    if (error || !data || data.length === 0) {
+      return opts.includeUnpublished ? seedFaqs : seedFaqs.filter((f) => f.published);
+    }
+
+    return data.map(
+      (row): FaqItem => ({
+        id: row.id,
+        question: row.question,
+        answer: row.answer,
+        published: row.published,
+        order: row.order_index,
+      }),
+    );
   } catch {
-    return seedFaqs;
+    return opts.includeUnpublished ? seedFaqs : seedFaqs.filter((f) => f.published);
   }
 }
 
@@ -163,6 +237,52 @@ export async function getPublishedReviews(): Promise<Review[]> {
     );
   } catch {
     return [];
+  }
+}
+
+/**
+ * Seções da Home: título/subtítulo/texto/imagem/visibilidade/ordem
+ * editáveis pelo /admin. A lista de chaves de seção é fixa no código
+ * (não é um page-builder livre) — só o conteúdo e a ordem entre elas
+ * são administráveis.
+ */
+export async function getHomeSections(opts: { includeHidden?: boolean } = {}): Promise<HomeSection[]> {
+  if (!isSupabaseConfigured()) {
+    const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
+    return [...sections].sort((a, b) => a.order - b.order);
+  }
+
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.from("home_sections").select("*").order("order_index", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
+      return [...sections].sort((a, b) => a.order - b.order);
+    }
+
+    const seedByKey = new Map(seedHomeSections.map((s) => [s.key, s]));
+
+    const sections: HomeSection[] = data.map((row) => {
+      const fallback = seedByKey.get(row.key);
+      return {
+        key: row.key,
+        title: row.title ?? fallback?.title ?? null,
+        subtitle: row.subtitle ?? fallback?.subtitle ?? null,
+        body: row.body ?? fallback?.body ?? null,
+        imageUrl: row.image_url ?? fallback?.imageUrl ?? null,
+        imageAlt: row.image_alt ?? fallback?.imageAlt ?? null,
+        buttonLabel: row.button_label ?? fallback?.buttonLabel ?? null,
+        buttonHref: row.button_href ?? fallback?.buttonHref ?? null,
+        visible: row.visible,
+        order: row.order_index,
+      };
+    });
+
+    return opts.includeHidden ? sections : sections.filter((s) => s.visible);
+  } catch {
+    const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
+    return [...sections].sort((a, b) => a.order - b.order);
   }
 }
 

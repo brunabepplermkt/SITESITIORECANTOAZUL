@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { NavPage, SiteSettings } from "@/lib/types";
+import { getBookingHref, getBookingTarget, isBookingActive } from "@/lib/booking";
 
 const NAV_LINKS = [
   { href: "/acomodacoes", label: "Acomodações" },
@@ -37,6 +38,10 @@ export function SiteHeader({
     CONTACT_LINK,
   ];
 
+  const bookingActive = isBookingActive(siteSettings);
+  const bookingHref = getBookingHref(siteSettings);
+  const bookingTarget = getBookingTarget(siteSettings);
+
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-cream/90 backdrop-blur">
       <div
@@ -60,14 +65,16 @@ export function SiteHeader({
               {link.label}
             </Link>
           ))}
-          <Link
-            href={siteSettings.defaultReserveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus-ring rounded-full bg-forest px-5 py-2.5 text-sm text-cream transition-opacity hover:opacity-90"
-          >
-            Reservar
-          </Link>
+          {bookingActive && (
+            <Link
+              href={bookingHref}
+              target={bookingTarget}
+              rel={bookingTarget === "_blank" ? "noopener noreferrer" : undefined}
+              className="focus-ring rounded-full bg-forest px-5 py-2.5 text-sm text-cream transition-opacity hover:opacity-90"
+            >
+              {siteSettings.bookingCtaLabel}
+            </Link>
+          )}
         </nav>
 
         <button
@@ -106,14 +113,16 @@ export function SiteHeader({
               {link.label}
             </Link>
           ))}
-          <Link
-            href={siteSettings.defaultReserveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus-ring mt-2 rounded-full bg-forest px-5 py-3 text-center text-sm text-cream"
-          >
-            Reservar
-          </Link>
+          {bookingActive && (
+            <Link
+              href={bookingHref}
+              target={bookingTarget}
+              rel={bookingTarget === "_blank" ? "noopener noreferrer" : undefined}
+              className="focus-ring mt-2 rounded-full bg-forest px-5 py-3 text-center text-sm text-cream"
+            >
+              {siteSettings.bookingCtaLabel}
+            </Link>
+          )}
         </nav>
       )}
     </header>

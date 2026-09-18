@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Photo } from "@/components/photo";
 import { ReserveButton } from "@/components/reserve-button";
 import { accommodations as seedAccommodations } from "@/lib/content";
-import { getAccommodation } from "@/lib/data";
+import { getAccommodation, getSiteSettings } from "@/lib/data";
+import { getBookingHref, getBookingTarget, isBookingActive } from "@/lib/booking";
 
 type Params = { slug: string };
 
@@ -36,8 +37,12 @@ export default async function AcomodacaoPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const acc = await getAccommodation(slug);
+  const [acc, siteSettings] = await Promise.all([getAccommodation(slug), getSiteSettings()]);
   if (!acc) notFound();
+
+  const bookingActive = isBookingActive(siteSettings);
+  const bookingHref = getBookingHref(siteSettings, { accommodationSlug: acc.slug }, acc.reserveUrl || null);
+  const bookingTarget = getBookingTarget(siteSettings);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -110,7 +115,11 @@ export default async function AcomodacaoPage({
               </span>
             </p>
           )}
-          <ReserveButton href={acc.reserveUrl} className="mt-6 w-full" />
+          {bookingActive && (
+            <ReserveButton href={bookingHref} target={bookingTarget} className="mt-6 w-full">
+              {siteSettings.bookingCtaLabel} — Ver disponibilidade
+            </ReserveButton>
+          )}
         </aside>
       </div>
     </div>

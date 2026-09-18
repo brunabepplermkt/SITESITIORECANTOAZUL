@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { MobileReserveBar } from "@/components/mobile-reserve-bar";
 import { siteSettings as seedSiteSettings } from "@/lib/content";
 import { getNavPages, getSiteSettings } from "@/lib/data";
+import { getBookingHref, getBookingTarget, isBookingActive } from "@/lib/booking";
 
 const editorial = Fraunces({
   variable: "--font-editorial",
@@ -54,7 +55,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader siteSettings={siteSettings} navPages={navPages} />
         <main className="flex-1">{children}</main>
         <SiteFooter siteSettings={siteSettings} navPages={navPages} />
-        <MobileReserveBar reserveUrl={siteSettings.defaultReserveUrl} />
+        <MobileReserveBar
+          bookingActive={isBookingActive(siteSettings)}
+          href={getBookingHref(siteSettings)}
+          target={getBookingTarget(siteSettings)}
+          label={siteSettings.bookingCtaLabel}
+        />
       </body>
     </html>
   );

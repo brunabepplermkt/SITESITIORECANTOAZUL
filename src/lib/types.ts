@@ -9,13 +9,25 @@ export type Accommodation = {
   slug: string;
   name: string;
   tagline: string;
+  shortDescription: string;
   description: string;
   capacity: string;
+  adults: number | null;
+  children: number | null;
+  beds: number | null;
+  rooms: number | null;
+  bathrooms: number | null;
   priceFrom: number | null;
   highlights: string[];
   amenities: string[];
   images: ImageAsset[];
   reserveUrl: string;
+  published: boolean;
+  featuredHome: boolean;
+  homeOrder: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
 };
 
 export type Experience = {
@@ -23,12 +35,17 @@ export type Experience = {
   name: string;
   description: string;
   image: ImageAsset;
+  published: boolean;
+  ctaLabel: string | null;
+  ctaHref: string | null;
 };
 
 export type FaqItem = {
   id?: string;
   question: string;
   answer: string;
+  published: boolean;
+  order: number;
 };
 
 export type ReviewSource = "airbnb" | "booking" | "google" | "direto" | "outro";
@@ -65,6 +82,32 @@ export type CmsPage = {
   blocks: PageBlock[];
 };
 
+/** Chaves fixas das seções da Home — a lista de seções não é livre, só o conteúdo/ordem/visibilidade delas. */
+export type HomeSectionKey =
+  | "hero"
+  | "intro"
+  | "acomodacoes"
+  | "sitio"
+  | "experiencias"
+  | "avaliacoes"
+  | "cta_final";
+
+export type HomeSection = {
+  key: HomeSectionKey;
+  title: string | null;
+  subtitle: string | null;
+  body: string | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  buttonLabel: string | null;
+  buttonHref: string | null;
+  visible: boolean;
+  order: number;
+};
+
+export type BookingProviderMode = "none" | "link" | "widget" | "zeloa";
+export type BookingOpenMode = "same_tab" | "new_tab";
+
 export type SiteSettings = {
   siteName: string;
   tagline: string;
@@ -73,5 +116,19 @@ export type SiteSettings = {
   email: string;
   instagram: string;
   address: string;
+  googleMapsUrl: string | null;
   defaultReserveUrl: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+  bookingProvider: BookingProviderMode;
+  bookingBaseUrl: string | null;
+  bookingOpenMode: BookingOpenMode;
+  bookingCtaLabel: string;
+  bookingShowSearchHome: boolean;
+  bookingShowSearchAccommodation: boolean;
+  bookingShowCalendar: boolean;
+  bookingWidgetEmbedUrl: string | null;
+  googleAnalyticsId: string | null;
+  metaPixelId: string | null;
 };

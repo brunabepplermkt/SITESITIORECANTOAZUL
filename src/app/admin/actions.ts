@@ -55,18 +55,98 @@ export async function updateSiteSettingsAction(formData: FormData) {
     id: "main",
     site_name: siteName,
     tagline: String(formData.get("tagline") ?? ""),
-    phone: String(formData.get("phone") ?? ""),
-    whatsapp: String(formData.get("whatsapp") ?? ""),
-    email: String(formData.get("email") ?? ""),
-    instagram: String(formData.get("instagram") ?? ""),
-    address: String(formData.get("address") ?? ""),
-    default_reserve_url: String(formData.get("defaultReserveUrl") ?? ""),
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
 
   revalidatePath("/", "layout");
   revalidatePath("/admin/configuracoes");
+}
+
+export async function updateContactSettingsAction(formData: FormData) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    id: "main",
+    phone: String(formData.get("phone") ?? ""),
+    whatsapp: String(formData.get("whatsapp") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    instagram: String(formData.get("instagram") ?? ""),
+    address: String(formData.get("address") ?? ""),
+    google_maps_url: String(formData.get("googleMapsUrl") ?? "").trim() || null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/configuracoes/contato");
+}
+
+const BOOKING_PROVIDERS = ["none", "link", "widget", "zeloa"];
+const BOOKING_OPEN_MODES = ["same_tab", "new_tab"];
+
+export async function updateBookingSettingsAction(formData: FormData) {
+  const bookingProvider = String(formData.get("bookingProvider") ?? "link");
+  const bookingOpenMode = String(formData.get("bookingOpenMode") ?? "new_tab");
+  if (!BOOKING_PROVIDERS.includes(bookingProvider)) throw new Error("Motor de reservas inválido.");
+  if (!BOOKING_OPEN_MODES.includes(bookingOpenMode)) throw new Error("Modo de abertura inválido.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    id: "main",
+    booking_provider: bookingProvider,
+    booking_base_url: String(formData.get("bookingBaseUrl") ?? "").trim() || null,
+    booking_open_mode: bookingOpenMode,
+    booking_cta_label: String(formData.get("bookingCtaLabel") ?? "").trim() || "Reservar",
+    booking_show_search_home: formData.get("bookingShowSearchHome") === "on",
+    booking_show_search_accommodation: formData.get("bookingShowSearchAccommodation") === "on",
+    booking_show_calendar: formData.get("bookingShowCalendar") === "on",
+    booking_widget_embed_url: String(formData.get("bookingWidgetEmbedUrl") ?? "").trim() || null,
+    default_reserve_url: String(formData.get("defaultReserveUrl") ?? ""),
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/configuracoes/reservas");
+}
+
+export async function updateIntegrationsSettingsAction(formData: FormData) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    id: "main",
+    google_analytics_id: String(formData.get("googleAnalyticsId") ?? "").trim() || null,
+    meta_pixel_id: String(formData.get("metaPixelId") ?? "").trim() || null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/configuracoes/integracoes");
+}
+
+export async function updateSeoSettingsAction(formData: FormData) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    id: "main",
+    seo_title: String(formData.get("seoTitle") ?? "").trim() || null,
+    seo_description: String(formData.get("seoDescription") ?? "").trim() || null,
+    og_image_url: String(formData.get("ogImageUrl") ?? "").trim() || null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/configuracoes/seo");
+}
+
+function parseOptionalInt(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const num = Number(raw);
+  if (!Number.isInteger(num) || num < 0) {
+    throw new Error("Use apenas números inteiros (0 ou mais), ou deixe em branco.");
+  }
+  return num;
 }
 
 export async function updateAccommodationAction(formData: FormData) {
@@ -80,16 +160,29 @@ export async function updateAccommodationAction(formData: FormData) {
     slug,
     name,
     tagline: String(formData.get("tagline") ?? ""),
+    short_description: String(formData.get("shortDescription") ?? "").trim() || null,
     description: String(formData.get("description") ?? ""),
     capacity: String(formData.get("capacity") ?? ""),
+    adults: parseOptionalInt(formData.get("adults")),
+    children: parseOptionalInt(formData.get("children")),
+    beds: parseOptionalInt(formData.get("beds")),
+    rooms: parseOptionalInt(formData.get("rooms")),
+    bathrooms: parseOptionalInt(formData.get("bathrooms")),
     price_from: priceFrom,
     highlights: parseList(formData.get("highlights")),
     amenities: parseList(formData.get("amenities")),
     reserve_url: String(formData.get("reserveUrl") ?? ""),
+    published: formData.get("published") === "on",
+    featured_home: formData.get("featuredHome") === "on",
+    home_order: parseOptionalInt(formData.get("homeOrder")) ?? 0,
+    seo_title: String(formData.get("seoTitle") ?? "").trim() || null,
+    seo_description: String(formData.get("seoDescription") ?? "").trim() || null,
+    og_image_url: String(formData.get("ogImageUrl") ?? "").trim() || null,
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
 
+  revalidatePath("/", "layout");
   revalidatePath("/acomodacoes");
   revalidatePath(`/acomodacoes/${slug}`);
   revalidatePath(`/admin/acomodacoes/${slug}`);
@@ -222,6 +315,47 @@ export async function reorderAccommodationImageAction(formData: FormData) {
   revalidatePath(`/admin/acomodacoes/${slug}`);
 }
 
+export async function setAccommodationCoverImageAction(formData: FormData) {
+  const supabase = await createClient();
+  const slug = String(formData.get("slug"));
+  const id = String(formData.get("id"));
+
+  const { data: images, error: fetchError } = await supabase
+    .from("accommodation_images")
+    .select("id")
+    .eq("accommodation_slug", slug)
+    .order("order_index", { ascending: true });
+  if (fetchError) throw new Error(fetchError.message);
+  if (!images) return;
+
+  const orderedIds = [id, ...images.map((img) => img.id).filter((imgId) => imgId !== id)];
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from("accommodation_images")
+      .update({ order_index: i })
+      .eq("id", orderedIds[i]);
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/acomodacoes");
+  revalidatePath(`/acomodacoes/${slug}`);
+  revalidatePath(`/admin/acomodacoes/${slug}`);
+}
+
+export async function updateAccommodationImageAltAction(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get("id"));
+  const slug = String(formData.get("slug"));
+  const alt = String(formData.get("alt") ?? "").trim();
+
+  const { error } = await supabase.from("accommodation_images").update({ alt }).eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/acomodacoes/${slug}`);
+  revalidatePath(`/admin/acomodacoes/${slug}`);
+}
+
 export async function updateExperienceAction(formData: FormData) {
   const slug = String(formData.get("slug"));
   const name = String(formData.get("name") ?? "").trim();
@@ -235,10 +369,14 @@ export async function updateExperienceAction(formData: FormData) {
     image_url: String(formData.get("imageUrl") ?? ""),
     image_alt: String(formData.get("imageAlt") ?? ""),
     order_index: Number(formData.get("orderIndex") ?? 0),
+    published: formData.get("published") === "on",
+    cta_label: String(formData.get("ctaLabel") ?? "").trim() || null,
+    cta_href: String(formData.get("ctaHref") ?? "").trim() || null,
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
 
+  revalidatePath("/", "layout");
   revalidatePath("/experiencias");
   revalidatePath("/admin/experiencias");
 }
@@ -294,6 +432,7 @@ export async function addFaqAction(formData: FormData) {
     question,
     answer,
     order_index: Number(formData.get("orderIndex") ?? 0),
+    published: formData.get("published") === "on",
   });
   if (error) throw new Error(error.message);
 
@@ -313,6 +452,7 @@ export async function updateFaqAction(formData: FormData) {
     .update({
       question,
       answer,
+      published: formData.get("published") === "on",
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -328,6 +468,27 @@ export async function deleteFaqAction(formData: FormData) {
 
   const { error } = await supabase.from("faqs").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  revalidatePath("/faq");
+  revalidatePath("/admin/faq");
+}
+
+export async function reorderFaqAction(formData: FormData) {
+  const currentId = String(formData.get("currentId"));
+  const currentOrder = Number(formData.get("currentOrder"));
+  const neighborId = String(formData.get("neighborId") ?? "");
+  const neighborOrder = Number(formData.get("neighborOrder"));
+
+  if (!neighborId || neighborId === "undefined" || !Number.isFinite(neighborOrder)) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error: error1 } = await supabase.from("faqs").update({ order_index: neighborOrder }).eq("id", currentId);
+  if (error1) throw new Error(error1.message);
+
+  const { error: error2 } = await supabase.from("faqs").update({ order_index: currentOrder }).eq("id", neighborId);
+  if (error2) throw new Error(error2.message);
 
   revalidatePath("/faq");
   revalidatePath("/admin/faq");
@@ -648,4 +809,61 @@ export async function updatePoliciesAction(formData: FormData) {
 
   revalidatePath("/politicas");
   revalidatePath("/admin/politicas");
+}
+
+/**
+ * Seções da Home: a lista de chaves é fixa (definida em lib/types.ts) — este
+ * action só atualiza conteúdo/visibilidade de uma seção já existente, nunca
+ * cria/remove seções (não é um page-builder livre).
+ */
+export async function updateHomeSectionAction(formData: FormData) {
+  const key = String(formData.get("key"));
+  if (!key) throw new Error("Seção inválida.");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("home_sections")
+    .update({
+      title: String(formData.get("title") ?? "").trim() || null,
+      subtitle: String(formData.get("subtitle") ?? "").trim() || null,
+      body: String(formData.get("body") ?? "").trim() || null,
+      image_url: String(formData.get("imageUrl") ?? "").trim() || null,
+      image_alt: String(formData.get("imageAlt") ?? "").trim() || null,
+      button_label: String(formData.get("buttonLabel") ?? "").trim() || null,
+      button_href: String(formData.get("buttonHref") ?? "").trim() || null,
+      visible: formData.get("visible") === "on",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("key", key);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/home");
+}
+
+export async function reorderHomeSectionAction(formData: FormData) {
+  const currentKey = String(formData.get("currentKey"));
+  const currentOrder = Number(formData.get("currentOrder"));
+  const neighborKey = String(formData.get("neighborKey") ?? "");
+  const neighborOrder = Number(formData.get("neighborOrder"));
+
+  if (!neighborKey || neighborKey === "undefined" || !Number.isFinite(neighborOrder)) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error: error1 } = await supabase
+    .from("home_sections")
+    .update({ order_index: neighborOrder })
+    .eq("key", currentKey);
+  if (error1) throw new Error(error1.message);
+
+  const { error: error2 } = await supabase
+    .from("home_sections")
+    .update({ order_index: currentOrder })
+    .eq("key", neighborKey);
+  if (error2) throw new Error(error2.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/home");
 }

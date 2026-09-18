@@ -3,7 +3,7 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { createExperienceAction, deleteExperienceAction, updateExperienceAction } from "../../actions";
 
 export default async function AdminExperienciasPage() {
-  const experiences = await getExperiences();
+  const experiences = await getExperiences({ includeUnpublished: true });
 
   return (
     <div className="max-w-2xl">
@@ -52,6 +52,28 @@ export default async function AdminExperienciasPage() {
                   className="focus-ring mt-1 w-full rounded border border-black/10 px-3 py-2 text-sm"
                 />
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-bark/80">Texto do botão (opcional)</label>
+                  <input
+                    name="ctaLabel"
+                    defaultValue={exp.ctaLabel ?? ""}
+                    className="focus-ring mt-1 w-full rounded border border-black/10 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-bark/80">Link do botão (opcional)</label>
+                  <input
+                    name="ctaHref"
+                    defaultValue={exp.ctaHref ?? ""}
+                    className="focus-ring mt-1 w-full rounded border border-black/10 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-bark/80">
+                <input type="checkbox" name="published" defaultChecked={exp.published} />
+                Publicada (visível no site)
+              </label>
               <button type="submit" className="focus-ring rounded-full bg-forest px-5 py-2 text-sm text-cream">
                 Salvar
               </button>

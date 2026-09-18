@@ -2,6 +2,7 @@ import type {
   Accommodation,
   Experience,
   FaqItem,
+  HomeSection,
   SiteSettings,
 } from "./types";
 
@@ -20,14 +21,28 @@ export const siteSettings: SiteSettings = {
   email: "contato@sitiorecantoazul.com.br",
   instagram: "https://instagram.com/sitiorecantoazul",
   address: "Endereço a confirmar",
+  googleMapsUrl: null,
   defaultReserveUrl: "https://wa.me/5500000000000",
+  seoTitle: null,
+  seoDescription: null,
+  ogImageUrl: null,
+  bookingProvider: "link",
+  bookingBaseUrl: null,
+  bookingOpenMode: "new_tab",
+  bookingCtaLabel: "Reservar",
+  bookingShowSearchHome: false,
+  bookingShowSearchAccommodation: false,
+  bookingShowCalendar: false,
+  bookingWidgetEmbedUrl: null,
+  googleAnalyticsId: null,
+  metaPixelId: null,
 };
 
 function img(url: string, alt: string, order = 0) {
   return { id: `${url}-${order}`, url, alt, order };
 }
 
-export const accommodations: Accommodation[] = [
+const baseAccommodations = [
   {
     slug: "agata",
     name: "Ágata",
@@ -139,7 +154,30 @@ export const accommodations: Accommodation[] = [
   },
 ];
 
-export const experiences: Experience[] = [
+const ROMANTIC_HOME_ORDER: Record<string, number> = {
+  agata: 0,
+  mirante: 1,
+  "doce-recanto": 2,
+  "domo-estelar": 3,
+};
+
+export const accommodations: Accommodation[] = baseAccommodations.map((a) => ({
+  ...a,
+  shortDescription: a.tagline,
+  adults: null,
+  children: null,
+  beds: null,
+  rooms: null,
+  bathrooms: null,
+  published: true,
+  featuredHome: a.slug in ROMANTIC_HOME_ORDER,
+  homeOrder: ROMANTIC_HOME_ORDER[a.slug] ?? 99,
+  seoTitle: null,
+  seoDescription: null,
+  ogImageUrl: null,
+}));
+
+const baseExperiences = [
   {
     slug: "mirante-por-do-sol",
     name: "Mirante para o pôr do sol",
@@ -172,23 +210,126 @@ export const experiences: Experience[] = [
   },
 ];
 
+export const experiences: Experience[] = baseExperiences.map((e) => ({
+  ...e,
+  published: true,
+  ctaLabel: null,
+  ctaHref: null,
+}));
+
 export const faqs: FaqItem[] = [
   {
     question: "Como faço para reservar?",
     answer:
       "Você pode reservar diretamente pelo botão \"Reservar\" em qualquer acomodação, que te leva ao nosso canal de atendimento.",
+    published: true,
+    order: 0,
   },
   {
     question: "Qual o horário de check-in e check-out?",
     answer: "Os horários serão informados no momento da confirmação da reserva.",
+    published: true,
+    order: 1,
   },
   {
     question: "O sítio aceita animais de estimação?",
     answer: "Consulte disponibilidade diretamente com nossa equipe antes de reservar.",
+    published: true,
+    order: 2,
   },
   {
     question: "Existe um número mínimo de noites?",
     answer: "As condições variam conforme a temporada e serão informadas no atendimento.",
+    published: true,
+    order: 3,
+  },
+];
+
+/** Reflete exatamente os textos que já existiam fixos na Home, como fallback. */
+export const homeSections: HomeSection[] = [
+  {
+    key: "hero",
+    title: "Um recanto para desacelerar",
+    subtitle: null,
+    body: null,
+    imageUrl: "/images/placeholder/hero-home.svg",
+    imageAlt: "Vista do Sítio Recanto Azul ao entardecer",
+    buttonLabel: "Reservar agora",
+    buttonHref: null,
+    visible: true,
+    order: 0,
+  },
+  {
+    key: "intro",
+    title: "Natureza, privacidade e tempo para o que importa",
+    subtitle: null,
+    body: "O Sítio Recanto Azul reúne acomodações pensadas para casais e grupos que buscam uma pausa real: hidromassagens com vista, lareiras, redes e um cenário natural que convida ao silêncio. Cada detalhe foi escolhido para transformar uma estadia em experiência.",
+    imageUrl: null,
+    imageAlt: null,
+    buttonLabel: null,
+    buttonHref: null,
+    visible: true,
+    order: 1,
+  },
+  {
+    key: "acomodacoes",
+    title: "Acomodações",
+    subtitle: null,
+    body: null,
+    imageUrl: null,
+    imageAlt: null,
+    buttonLabel: null,
+    buttonHref: null,
+    visible: true,
+    order: 2,
+  },
+  {
+    key: "sitio",
+    title: "Um cenário construído para experiências, não apenas hospedagem",
+    subtitle: "O sítio",
+    body: "Entre mirantes, decks e trilhas, o Recanto Azul foi pensado para que cada hóspede viva a natureza de perto — do nascer ao pôr do sol.",
+    imageUrl: "/images/placeholder/about-sitio.svg",
+    imageAlt: "Ambiente natural do Sítio Recanto Azul",
+    buttonLabel: "Conheça o sítio",
+    buttonHref: "/sobre",
+    visible: true,
+    order: 3,
+  },
+  {
+    key: "experiencias",
+    title: "Experiências",
+    subtitle: null,
+    body: "Momentos preparados para tornar sua estadia inesquecível.",
+    imageUrl: null,
+    imageAlt: null,
+    buttonLabel: null,
+    buttonHref: null,
+    visible: true,
+    order: 4,
+  },
+  {
+    key: "avaliacoes",
+    title: "Histórias de quem viveu o Recanto Azul",
+    subtitle: "Quem já ficou",
+    body: null,
+    imageUrl: null,
+    imageAlt: null,
+    buttonLabel: null,
+    buttonHref: null,
+    visible: true,
+    order: 5,
+  },
+  {
+    key: "cta_final",
+    title: "Pronto para desacelerar?",
+    subtitle: null,
+    body: "Escolha sua acomodação e reserve seu tempo de descanso.",
+    imageUrl: null,
+    imageAlt: null,
+    buttonLabel: null,
+    buttonHref: null,
+    visible: true,
+    order: 6,
   },
 ];
 

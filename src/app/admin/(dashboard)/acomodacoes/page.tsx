@@ -3,7 +3,7 @@ import { getAccommodations } from "@/lib/data";
 import { createAccommodationAction } from "../../actions";
 
 export default async function AdminAcomodacoesPage() {
-  const accommodations = await getAccommodations();
+  const accommodations = await getAccommodations({ includeUnpublished: true });
 
   return (
     <div className="max-w-2xl">
@@ -16,7 +16,12 @@ export default async function AdminAcomodacoesPage() {
               className="focus-ring flex items-center justify-between px-1 py-4 hover:bg-sand/20"
             >
               <div>
-                <p className="font-serif text-lg text-bark">{acc.name}</p>
+                <p className="font-serif text-lg text-bark">
+                  {acc.name}
+                  {!acc.published && (
+                    <span className="ml-2 rounded-full bg-clay/20 px-2 py-0.5 text-xs text-clay">Não publicada</span>
+                  )}
+                </p>
                 <p className="text-sm text-bark/60">{acc.tagline}</p>
               </div>
               <span className="text-sm text-bark/50">Editar →</span>

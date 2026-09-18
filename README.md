@@ -59,9 +59,102 @@ Nunca commitar `.env` ou `.env.local`.
 
 ## Painel administrativo
 
-Acesse `/admin` para editar textos, acomodações, experiências, FAQ e políticas sem
-precisar mexer em código. Requer login com um usuário Supabase cadastrado no passo
-anterior.
+Acesse `/admin` para editar, sem mexer em código:
+
+- **Página inicial** (`/admin/home`) — título/subtítulo/texto/imagem/botão de cada
+  bloco da Home (Hero, Apresentação, Acomodações, O Sítio, Experiências, Avaliações,
+  CTA final), visibilidade e ordem entre eles. A lista de blocos é fixa — não é um
+  page-builder livre — para o design nunca quebrar.
+- **Acomodações** — nome, descrições, capacidade detalhada (adultos/crianças/
+  camas/quartos/banheiros), diferenciais, comodidades, preço, fotos (upload,
+  reordenar, definir capa, editar texto alternativo), publicar/despublicar,
+  destaque e ordem na Home, e SEO por acomodação.
+- **Experiências, Avaliações, FAQ, Páginas, Políticas** — criar, editar, reordenar,
+  publicar/despublicar.
+- **Configurações → Contato** — WhatsApp, telefone, e-mail, Instagram, endereço e
+  link do Google Maps: fonte única usada pelo rodapé, Contato e Localização.
+- **Configurações → Reservas** — motor de reservas (ver seção "Reservas" abaixo).
+- **Configurações → Integrações** — IDs (não secretos) de Google Analytics e Meta
+  Pixel, deixados em branco até você ter as contas reais.
+- **Configurações → SEO** — título/descrição/imagem padrão para buscadores e redes
+  sociais.
+
+Requer login com um usuário Supabase cadastrado no passo anterior.
+
+### Fotos e biblioteca de mídia
+
+O upload/gerenciamento de fotos hoje é feito por entidade (cada acomodação e cada
+página têm seu próprio gerenciador de imagens, com drag-and-drop, preview,
+reordenar, definir capa, editar texto alternativo e excluir) usando o bucket público
+`accommodation-images` do Supabase Storage. Optou-se por isso — em vez de uma
+biblioteca central única — para não adicionar complexidade sem necessidade nesta
+fase; é o mesmo armazenamento por baixo, então evoluir para uma biblioteca cruzada
+no futuro não exige remodelar o banco.
+
+### Modo de edição visual / rascunho e publicação
+
+Duas simplificações intencionais desta fase, documentadas conforme pedido:
+
+- **Sem editor visual inline no site público.** Toda edição de conteúdo acontece em
+  `/admin`. Um modo "clique para editar" sobre o site ao vivo foi avaliado, mas
+  adiado: o ganho de conveniência não compensa, agora, o risco de complexidade e de
+  abrir superfícies de edição fora do painel controlado. O `/admin` já cobre 100%
+  dos campos de conteúdo.
+- **Sem rascunho/publicação separados por campo.** Todo conteúdo tem um único
+  estado "publicado" (booleano) por item — não existe uma versão "rascunho" salva
+  em paralelo à versão ao vivo. Antes de mudanças importantes, prepare o conteúdo
+  com o item despublicado e revise a própria página de edição; publique quando
+  estiver pronto. Uma pré-visualização completa fora do estado publicado ficou para
+  uma fase futura, se necessário.
+
+## Reservas e `BookingProvider`
+
+Nenhum botão "Reservar" do site tem uma URL fixa no código. Todos (menu, botão fixo
+no celular, Home, páginas de acomodação, Contato) usam `src/lib/booking.ts`, que lê
+a configuração de `/admin/configuracoes/reservas` (tabela `site_settings`):
+
+- **Motor** (`booking_provider`): `none` (esconde os botões), `link` (URL externa —
+  WhatsApp, motor temporário como o "Mobile Calendar", etc.), `widget` (embutido) ou
+  `zeloa` (reservado para quando a integração estiver pronta).
+- **URL base** (`booking_base_url`): a URL para onde os botões apontam. Uma
+  acomodação pode ter seu próprio link de reserva (`reserve_url`), que sobrepõe a
+  URL base só para ela.
+- **Modo de abertura, texto do botão e exibição de busca/calendário** também vêm
+  dessa mesma configuração.
+
+Trocar de motor é 100% uma mudança de configuração em `/admin` — nunca requer
+alterar código ou fazer novo deploy.
+
+### Parâmetros de busca (deep-link)
+
+`getBookingHref()` sabe montar a URL com `checkin`, `checkout`, `adultos`,
+`criancas` e `acomodacao` como parâmetros de busca. **Esses nomes são um
+placeholder de arquitetura, não a API real de nenhum motor** — quando o Zeloa (ou
+outro motor) definir o formato final, ajusta-se essa única função; nenhum
+componente do site precisa mudar.
+
+### Integração futura com o Zeloa
+
+Fora de escopo nesta fase (arquitetura apenas, sem implementação):
+
+- O site (`www.sitiorecantoazul.com.br`) continua sendo a vitrine de conteúdo.
+- O Zeloa (`reservas.sitiorecantoazul.com.br`) será o motor de reservas —
+  disponibilidade, tarifas, hóspedes, extras, reserva e pagamento vivem lá, nunca
+  duplicados no site.
+- Quando o Zeloa estiver pronto, ativa-se trocando `booking_provider` para
+  `"zeloa"` em `/admin/configuracoes/reservas` e preenchendo a URL base — sem
+  mudança estrutural no site.
+- Uma fase futura pode consultar a API do Zeloa diretamente (disponibilidade/preço
+  ao vivo). O `BookingProvider` já isola esse ponto de extensão; nenhuma
+  disponibilidade é armazenada no banco do site hoje — nem falsa, nem real.
+
+### Analytics
+
+`src/lib/analytics.ts` expõe `trackEvent()`, que empilha eventos em
+`window.dataLayer` (padrão já lido por Google Analytics/GTM e a maioria dos
+pixels). Eventos previstos: `booking_search`, `booking_click`, `whatsapp_click`,
+`accommodation_view`, `review_interaction`. Nenhum ID de rastreamento é hardcoded —
+vem de `/admin/configuracoes/integracoes` quando preenchido.
 
 ## Estrutura do projeto
 
@@ -87,9 +180,3 @@ supabase/
 
 O projeto está pronto para deploy em qualquer plataforma compatível com Next.js
 (ex.: Vercel). Configure as variáveis de ambiente de produção na plataforma escolhida.
-
-## Reservas
-
-O botão "Reservar" aponta hoje para uma URL configurável (WhatsApp, por padrão).
-Está preparado para, futuramente, apontar diretamente para o motor de reservas do
-Zeloa, sem exigir mudanças estruturais no site.

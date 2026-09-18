@@ -6,6 +6,8 @@ import {
   addAccommodationImageAction,
   deleteAccommodationImageAction,
   reorderAccommodationImageAction,
+  setAccommodationCoverImageAction,
+  updateAccommodationImageAltAction,
 } from "../../../actions";
 
 export function ImageManager({ slug, images }: { slug: string; images: ImageAsset[] }) {
@@ -35,8 +37,38 @@ export function ImageManager({ slug, images }: { slug: string; images: ImageAsse
             <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-black/10 bg-stone/20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img.url} alt={img.alt} className="h-full w-full object-cover" />
+              {i === 0 && (
+                <span className="absolute left-1.5 top-1.5 rounded-full bg-forest px-2 py-0.5 text-[10px] uppercase tracking-wide text-cream">
+                  Capa
+                </span>
+              )}
             </div>
+
+            <form action={updateAccommodationImageAltAction} className="flex gap-1">
+              <input type="hidden" name="id" value={img.id} />
+              <input type="hidden" name="slug" value={slug} />
+              <input
+                type="text"
+                name="alt"
+                defaultValue={img.alt}
+                placeholder="Texto alternativo"
+                className="focus-ring min-w-0 flex-1 rounded border border-black/10 px-1.5 py-1 text-xs"
+              />
+              <button type="submit" className="focus-ring shrink-0 text-xs text-bark/60">
+                salvar
+              </button>
+            </form>
+
             <div className="flex items-center justify-between gap-1 text-xs">
+              {i !== 0 && (
+                <form action={setAccommodationCoverImageAction}>
+                  <input type="hidden" name="id" value={img.id} />
+                  <input type="hidden" name="slug" value={slug} />
+                  <button type="submit" className="focus-ring px-1 text-bark/60">
+                    definir capa
+                  </button>
+                </form>
+              )}
               <form action={reorderAccommodationImageAction}>
                 <input type="hidden" name="slug" value={slug} />
                 <input type="hidden" name="currentId" value={img.id} />

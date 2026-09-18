@@ -9,13 +9,14 @@ export const dynamic = "force-dynamic";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Início" },
-  { href: "/admin/configuracoes", label: "Configurações" },
+  { href: "/admin/home", label: "Página inicial" },
   { href: "/admin/acomodacoes", label: "Acomodações" },
   { href: "/admin/experiencias", label: "Experiências" },
   { href: "/admin/avaliacoes", label: "Avaliações" },
   { href: "/admin/faq", label: "FAQ" },
   { href: "/admin/paginas", label: "Páginas" },
   { href: "/admin/politicas", label: "Políticas" },
+  { href: "/admin/configuracoes", label: "Configurações" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -2,18 +2,20 @@ import Link from "next/link";
 
 export function ReserveButton({
   href,
+  target = "_blank",
   className = "",
   children = "Reservar",
 }: {
   href: string;
+  target?: "_self" | "_blank";
   className?: string;
   children?: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={target}
+      rel={target === "_blank" ? "noopener noreferrer" : undefined}
       className={`focus-ring inline-flex min-h-12 items-center justify-center rounded-full bg-forest px-8 py-3.5 text-[0.95rem] font-medium tracking-wide text-cream transition-opacity hover:opacity-90 ${className}`}
     >
       {children}

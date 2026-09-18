@@ -27,6 +27,23 @@ export default async function ContatoPage() {
           <dd>{siteSettings.email}</dd>
         </div>
         <div>
+          <dt className="sr-only">Endereço</dt>
+          <dd>
+            {siteSettings.googleMapsUrl ? (
+              <a
+                className="focus-ring rounded underline underline-offset-4"
+                href={siteSettings.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {siteSettings.address}
+              </a>
+            ) : (
+              siteSettings.address
+            )}
+          </dd>
+        </div>
+        <div>
           <dt className="sr-only">Instagram</dt>
           <dd>
             <a
@@ -42,7 +59,7 @@ export default async function ContatoPage() {
       </dl>
 
       <div className="mt-10 flex justify-center">
-        <ReserveButton href={siteSettings.defaultReserveUrl}>Falar pelo WhatsApp</ReserveButton>
+        <ReserveButton href={`https://wa.me/${siteSettings.whatsapp}`}>Falar pelo WhatsApp</ReserveButton>
       </div>
     </div>
   );

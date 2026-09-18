@@ -27,7 +27,7 @@ export default async function FaqPage() {
 
       <div className="mt-14 divide-y divide-black/10">
         {faqs.map((faq) => (
-          <details key={faq.question} className="group py-5">
+          <details key={faq.id ?? faq.question} className="group py-5">
             <summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 rounded font-serif text-lg text-bark">
               {faq.question}
               <span className="shrink-0 text-clay transition-transform group-open:rotate-45">+</span>

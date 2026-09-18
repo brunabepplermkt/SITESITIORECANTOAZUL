@@ -16,6 +16,8 @@ export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
             <li><Link className="focus-ring rounded hover:text-cream" href="/acomodacoes">Acomodações</Link></li>
             <li><Link className="focus-ring rounded hover:text-cream" href="/experiencias">Experiências</Link></li>
             <li><Link className="focus-ring rounded hover:text-cream" href="/sobre">O Sítio</Link></li>
+            <li><Link className="focus-ring rounded hover:text-cream" href="/localizacao">Localização</Link></li>
+            <li><Link className="focus-ring rounded hover:text-cream" href="/faq">FAQ</Link></li>
             <li><Link className="focus-ring rounded hover:text-cream" href="/politicas">Políticas</Link></li>
           </ul>
         </div>

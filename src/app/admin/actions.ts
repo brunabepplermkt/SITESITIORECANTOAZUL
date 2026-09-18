@@ -12,6 +12,24 @@ function parseList(value: FormDataEntryValue | null): string[] {
     .filter(Boolean);
 }
 
+function parsePrice(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const normalized = raw.replace(",", ".");
+  const num = Number(normalized);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error("Preço inválido: informe apenas números (ex.: 350 ou 350.00).");
+  }
+  return num;
+}
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+function sanitizeFileName(name: string): string {
+  const base = name.normalize("NFKD").replace(/[̀-ͯ]/g, "");
+  return base.replace(/[^a-zA-Z0-9.\-_]/g, "-").replace(/-+/g, "-").slice(-100);
+}
+
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
@@ -19,10 +37,13 @@ export async function signOutAction() {
 }
 
 export async function updateSiteSettingsAction(formData: FormData) {
+  const siteName = String(formData.get("siteName") ?? "").trim();
+  if (!siteName) throw new Error("O nome do site é obrigatório.");
+
   const supabase = await createClient();
   const { error } = await supabase.from("site_settings").upsert({
     id: "main",
-    site_name: String(formData.get("siteName") ?? ""),
+    site_name: siteName,
     tagline: String(formData.get("tagline") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     whatsapp: String(formData.get("whatsapp") ?? ""),
@@ -41,15 +62,17 @@ export async function updateSiteSettingsAction(formData: FormData) {
 export async function updateAccommodationAction(formData: FormData) {
   const supabase = await createClient();
   const slug = String(formData.get("slug"));
-  const priceFromRaw = String(formData.get("priceFrom") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!slug || !name) throw new Error("Nome da acomodação é obrigatório.");
+  const priceFrom = parsePrice(formData.get("priceFrom"));
 
   const { error } = await supabase.from("accommodations").upsert({
     slug,
-    name: String(formData.get("name") ?? ""),
+    name,
     tagline: String(formData.get("tagline") ?? ""),
     description: String(formData.get("description") ?? ""),
     capacity: String(formData.get("capacity") ?? ""),
-    price_from: priceFromRaw ? Number(priceFromRaw) : null,
+    price_from: priceFrom,
     highlights: parseList(formData.get("highlights")),
     amenities: parseList(formData.get("amenities")),
     reserve_url: String(formData.get("reserveUrl") ?? ""),
@@ -69,8 +92,14 @@ export async function addAccommodationImageAction(formData: FormData) {
   const alt = String(formData.get("alt") ?? "");
 
   if (!file || file.size === 0) throw new Error("Selecione um arquivo de imagem.");
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Arquivo inválido: envie apenas imagens (JPG, PNG, WebP...).");
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("Imagem muito grande: o limite é 8MB.");
+  }
 
-  const path = `${slug}/${Date.now()}-${file.name}`;
+  const path = `${slug}/${Date.now()}-${sanitizeFileName(file.name)}`;
   const { error: uploadError } = await supabase.storage
     .from("accommodation-images")
     .upload(path, file, { upsert: false });
@@ -111,27 +140,44 @@ export async function deleteAccommodationImageAction(formData: FormData) {
 
 export async function reorderAccommodationImageAction(formData: FormData) {
   const supabase = await createClient();
-  const id = String(formData.get("id"));
   const slug = String(formData.get("slug"));
-  const orderIndex = Number(formData.get("orderIndex"));
+  const currentId = String(formData.get("currentId"));
+  const currentOrder = Number(formData.get("currentOrder"));
+  const neighborId = String(formData.get("neighborId") ?? "");
+  const neighborOrder = Number(formData.get("neighborOrder"));
 
-  const { error } = await supabase
+  if (!neighborId || neighborId === "undefined" || !Number.isFinite(neighborOrder)) {
+    // Já está na primeira/última posição; nada a fazer.
+    return;
+  }
+
+  // Troca real das posições (não apenas copia o valor do vizinho), para
+  // nunca deixar duas imagens com o mesmo order_index.
+  const { error: error1 } = await supabase
     .from("accommodation_images")
-    .update({ order_index: orderIndex })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+    .update({ order_index: neighborOrder })
+    .eq("id", currentId);
+  if (error1) throw new Error(error1.message);
+
+  const { error: error2 } = await supabase
+    .from("accommodation_images")
+    .update({ order_index: currentOrder })
+    .eq("id", neighborId);
+  if (error2) throw new Error(error2.message);
 
   revalidatePath(`/acomodacoes/${slug}`);
   revalidatePath(`/admin/acomodacoes/${slug}`);
 }
 
 export async function updateExperienceAction(formData: FormData) {
-  const supabase = await createClient();
   const slug = String(formData.get("slug"));
+  const name = String(formData.get("name") ?? "").trim();
+  if (!slug || !name) throw new Error("Nome da experiência é obrigatório.");
 
+  const supabase = await createClient();
   const { error } = await supabase.from("experiences").upsert({
     slug,
-    name: String(formData.get("name") ?? ""),
+    name,
     description: String(formData.get("description") ?? ""),
     image_url: String(formData.get("imageUrl") ?? ""),
     image_alt: String(formData.get("imageAlt") ?? ""),
@@ -145,10 +191,14 @@ export async function updateExperienceAction(formData: FormData) {
 }
 
 export async function addFaqAction(formData: FormData) {
+  const question = String(formData.get("question") ?? "").trim();
+  const answer = String(formData.get("answer") ?? "").trim();
+  if (!question || !answer) throw new Error("Pergunta e resposta são obrigatórias.");
+
   const supabase = await createClient();
   const { error } = await supabase.from("faqs").insert({
-    question: String(formData.get("question") ?? ""),
-    answer: String(formData.get("answer") ?? ""),
+    question,
+    answer,
     order_index: Number(formData.get("orderIndex") ?? 0),
   });
   if (error) throw new Error(error.message);
@@ -158,14 +208,17 @@ export async function addFaqAction(formData: FormData) {
 }
 
 export async function updateFaqAction(formData: FormData) {
-  const supabase = await createClient();
   const id = String(formData.get("id"));
+  const question = String(formData.get("question") ?? "").trim();
+  const answer = String(formData.get("answer") ?? "").trim();
+  if (!question || !answer) throw new Error("Pergunta e resposta são obrigatórias.");
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("faqs")
     .update({
-      question: String(formData.get("question") ?? ""),
-      answer: String(formData.get("answer") ?? ""),
+      question,
+      answer,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

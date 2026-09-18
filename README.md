@@ -41,9 +41,21 @@ Nunca commitar `.env` ou `.env.local`.
    (não reutilizar bancos de outros projetos).
 2. Rode as migrations em `supabase/migrations/` (via SQL Editor do Supabase ou
    `supabase db push`, se usar a CLI).
-3. Crie um bucket de storage público chamado `accommodation-images`.
+3. O bucket de storage `accommodation-images` já é criado pela própria migration.
 4. Crie um usuário (e-mail/senha) em *Authentication* para acessar o painel `/admin`.
-5. Preencha as variáveis de ambiente com a URL e as chaves do projeto.
+5. **Obrigatório:** autorize esse e-mail a editar o site rodando no SQL Editor:
+   ```sql
+   insert into admin_users (email) values ('seu-email@dominio.com');
+   ```
+   Sem essa linha, o login funciona mas nenhuma edição é salva — as políticas de
+   segurança (RLS) só liberam escrita para e-mails cadastrados em `admin_users`.
+   Isso existe porque, por padrão, o Supabase permite que qualquer visitante crie
+   uma conta sozinho; sem essa lista de permissão, um cadastro externo conseguiria
+   editar o site só por estar "autenticado".
+6. Preencha as variáveis de ambiente com a URL e as chaves do projeto.
+7. Recomendado (reforço extra de segurança): em *Authentication → Sign In / Providers →
+   Email*, desative o cadastro público ("Allow new users to sign up"), já que este
+   site tem um único administrador e novas contas nunca deveriam ser necessárias.
 
 ## Painel administrativo
 

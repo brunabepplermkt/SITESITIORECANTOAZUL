@@ -8,7 +8,8 @@ export default async function AdminExperienciasPage() {
     <div className="max-w-2xl">
       <h1 className="font-serif text-2xl text-bark">Experiências</h1>
       <p className="mt-1 text-sm text-bark/60">
-        Para adicionar uma nova experiência, defina um slug ainda não existente abaixo.
+        Edite o texto e a foto de cada experiência já cadastrada. Criar ou remover
+        experiências desta lista ainda não é suportado pelo painel.
       </p>
 
       <div className="mt-6 space-y-8">

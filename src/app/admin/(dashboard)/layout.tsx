@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { signOutAction } from "../actions";
 
+// O painel é sempre renderizado por requisição: precisa refletir a sessão
+// autenticada atual e os dados mais recentes do Supabase, nunca uma captura
+// estática gerada em build time (quando as variáveis de ambiente do Supabase
+// podem ainda não estar disponíveis).
+export const dynamic = "force-dynamic";
+
 const ADMIN_LINKS = [
   { href: "/admin", label: "Início" },
   { href: "/admin/configuracoes", label: "Configurações" },

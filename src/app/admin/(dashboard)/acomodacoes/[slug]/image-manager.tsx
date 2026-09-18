@@ -38,17 +38,21 @@ export function ImageManager({ slug, images }: { slug: string; images: ImageAsse
             </div>
             <div className="flex items-center justify-between gap-1 text-xs">
               <form action={reorderAccommodationImageAction}>
-                <input type="hidden" name="id" value={img.id} />
                 <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="orderIndex" value={Math.max(0, i - 1)} />
+                <input type="hidden" name="currentId" value={img.id} />
+                <input type="hidden" name="currentOrder" value={img.order} />
+                <input type="hidden" name="neighborId" value={sorted[i - 1]?.id} />
+                <input type="hidden" name="neighborOrder" value={sorted[i - 1]?.order} />
                 <button type="submit" disabled={i === 0} className="focus-ring px-1 text-bark/60 disabled:opacity-30">
                   ↑
                 </button>
               </form>
               <form action={reorderAccommodationImageAction}>
-                <input type="hidden" name="id" value={img.id} />
                 <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="orderIndex" value={i + 1} />
+                <input type="hidden" name="currentId" value={img.id} />
+                <input type="hidden" name="currentOrder" value={img.order} />
+                <input type="hidden" name="neighborId" value={sorted[i + 1]?.id} />
+                <input type="hidden" name="neighborOrder" value={sorted[i + 1]?.order} />
                 <button
                   type="submit"
                   disabled={i === sorted.length - 1}

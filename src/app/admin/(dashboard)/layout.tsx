@@ -14,6 +14,7 @@ const ADMIN_LINKS = [
   { href: "/admin/experiencias", label: "Experiências" },
   { href: "/admin/avaliacoes", label: "Avaliações" },
   { href: "/admin/faq", label: "FAQ" },
+  { href: "/admin/paginas", label: "Páginas" },
   { href: "/admin/politicas", label: "Políticas" },
 ];
 

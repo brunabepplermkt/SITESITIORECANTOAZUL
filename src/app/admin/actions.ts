@@ -243,6 +243,47 @@ export async function updateExperienceAction(formData: FormData) {
   revalidatePath("/admin/experiencias");
 }
 
+export async function createExperienceAction(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) throw new Error("Nome da experiência é obrigatório.");
+
+  const slug = slugify(name);
+  if (!slug) throw new Error("Não foi possível gerar um identificador a partir desse nome.");
+
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("experiences")
+    .select("slug", { count: "exact", head: true });
+
+  const { error } = await supabase.from("experiences").insert({
+    slug,
+    name,
+    order_index: count ?? 0,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(`Já existe uma experiência com identificador "${slug}". Escolha um nome diferente.`);
+    }
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/experiencias");
+  revalidatePath("/admin/experiencias");
+}
+
+export async function deleteExperienceAction(formData: FormData) {
+  const slug = String(formData.get("slug"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("experiences").delete().eq("slug", slug);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/experiencias");
+  revalidatePath("/admin/experiencias");
+}
+
 export async function addFaqAction(formData: FormData) {
   const question = String(formData.get("question") ?? "").trim();
   const answer = String(formData.get("answer") ?? "").trim();
@@ -392,6 +433,208 @@ export async function reorderReviewAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/avaliacoes");
+}
+
+const RESERVED_PAGE_SLUGS = new Set([
+  "admin",
+  "acomodacoes",
+  "experiencias",
+  "sobre",
+  "localizacao",
+  "faq",
+  "contato",
+  "politicas",
+  "api",
+  "sitemap.xml",
+  "robots.txt",
+  "favicon.ico",
+  "icon.svg",
+]);
+
+export async function createPageAction(formData: FormData) {
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) throw new Error("Título da página é obrigatório.");
+
+  const slug = slugify(title);
+  if (!slug) throw new Error("Não foi possível gerar um identificador a partir desse título.");
+  if (RESERVED_PAGE_SLUGS.has(slug)) {
+    throw new Error(`"${slug}" é um endereço reservado do site. Escolha um título diferente.`);
+  }
+
+  const supabase = await createClient();
+
+  const { count } = await supabase.from("pages").select("id", { count: "exact", head: true });
+
+  const { error } = await supabase.from("pages").insert({
+    slug,
+    title,
+    order_index: count ?? 0,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(`Já existe uma página com identificador "${slug}". Escolha um título diferente.`);
+    }
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/paginas");
+  redirect(`/admin/paginas/${slug}`);
+}
+
+export async function updatePageMetaAction(formData: FormData) {
+  const slug = String(formData.get("slug"));
+  const title = String(formData.get("title") ?? "").trim();
+  if (!slug || !title) throw new Error("Título da página é obrigatório.");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("pages")
+    .update({
+      title,
+      nav_label: String(formData.get("navLabel") ?? "").trim() || null,
+      show_in_nav: formData.get("showInNav") === "on",
+      published: formData.get("published") === "on",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", slug);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
+}
+
+export async function deletePageAction(formData: FormData) {
+  const slug = String(formData.get("slug"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("pages").delete().eq("slug", slug);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/paginas");
+  redirect("/admin/paginas");
+}
+
+export async function addTextBlockAction(formData: FormData) {
+  const pageId = String(formData.get("pageId"));
+  const slug = String(formData.get("slug"));
+  const content = String(formData.get("content") ?? "").trim();
+  if (!content) throw new Error("Escreva algum texto para o bloco.");
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("page_blocks")
+    .select("id", { count: "exact", head: true })
+    .eq("page_id", pageId);
+
+  const { error } = await supabase.from("page_blocks").insert({
+    page_id: pageId,
+    type: "text",
+    content,
+    order_index: count ?? 0,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
+}
+
+export async function updateTextBlockAction(formData: FormData) {
+  const id = String(formData.get("id"));
+  const slug = String(formData.get("slug"));
+  const content = String(formData.get("content") ?? "").trim();
+  if (!content) throw new Error("Escreva algum texto para o bloco.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("page_blocks").update({ content }).eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
+}
+
+export async function addImageBlockAction(formData: FormData) {
+  const pageId = String(formData.get("pageId"));
+  const slug = String(formData.get("slug"));
+  const file = formData.get("file") as File | null;
+  const alt = String(formData.get("alt") ?? "");
+
+  if (!file || file.size === 0) throw new Error("Selecione um arquivo de imagem.");
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Arquivo inválido: envie apenas imagens (JPG, PNG, WebP...).");
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("Imagem muito grande: o limite é 8MB.");
+  }
+
+  const supabase = await createClient();
+  const path = `pages/${slug}/${Date.now()}-${sanitizeFileName(file.name)}`;
+  const { error: uploadError } = await supabase.storage
+    .from("accommodation-images")
+    .upload(path, file, { upsert: false });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data: publicUrlData } = supabase.storage.from("accommodation-images").getPublicUrl(path);
+
+  const { count } = await supabase
+    .from("page_blocks")
+    .select("id", { count: "exact", head: true })
+    .eq("page_id", pageId);
+
+  const { error: insertError } = await supabase.from("page_blocks").insert({
+    page_id: pageId,
+    type: "image",
+    image_url: publicUrlData.publicUrl,
+    image_alt: alt,
+    order_index: count ?? 0,
+  });
+  if (insertError) throw new Error(insertError.message);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
+}
+
+export async function deleteBlockAction(formData: FormData) {
+  const id = String(formData.get("id"));
+  const slug = String(formData.get("slug"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("page_blocks").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
+}
+
+export async function reorderBlockAction(formData: FormData) {
+  const slug = String(formData.get("slug"));
+  const currentId = String(formData.get("currentId"));
+  const currentOrder = Number(formData.get("currentOrder"));
+  const neighborId = String(formData.get("neighborId") ?? "");
+  const neighborOrder = Number(formData.get("neighborOrder"));
+
+  if (!neighborId || neighborId === "undefined" || !Number.isFinite(neighborOrder)) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error: error1 } = await supabase
+    .from("page_blocks")
+    .update({ order_index: neighborOrder })
+    .eq("id", currentId);
+  if (error1) throw new Error(error1.message);
+
+  const { error: error2 } = await supabase
+    .from("page_blocks")
+    .update({ order_index: currentOrder })
+    .eq("id", neighborId);
+  if (error2) throw new Error(error2.message);
+
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/admin/paginas/${slug}`);
 }
 
 export async function updatePoliciesAction(formData: FormData) {

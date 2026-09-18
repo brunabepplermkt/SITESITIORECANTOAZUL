@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { getAccommodations } from "@/lib/data";
+import { getAccommodations, getPublishedPageSlugs } from "@/lib/data";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sitiorecantoazul.com.br";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const accommodations = await getAccommodations();
+  const [accommodations, pageSlugs] = await Promise.all([getAccommodations(), getPublishedPageSlugs()]);
   const staticRoutes = [
     "",
     "/acomodacoes",
@@ -24,5 +24,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
   }));
 
-  return [...staticRoutes, ...accommodationRoutes];
+  const pageRoutes = pageSlugs.map((slug) => ({
+    url: `${siteUrl}/${slug}`,
+    lastModified: new Date(),
+  }));
+
+  return [...staticRoutes, ...accommodationRoutes, ...pageRoutes];
 }

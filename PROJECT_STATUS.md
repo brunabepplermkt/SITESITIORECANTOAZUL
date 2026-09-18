@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Sítio Recanto Azul
 
-Última atualização: 2026-09-18 (rodada de refinamento mobile-first + avaliações)
+Última atualização: 2026-09-18 (+ CRUD de acomodações/experiências/páginas)
 
 Este documento separa o que está **confirmado por teste real** do que **parece
 pronto mas ainda depende de algo externo**. Nada aqui foi marcado como
@@ -84,6 +84,25 @@ validado sem execução real de build, lint, type-check e navegador.
   mostrada como texto discreto, sem logos), scroll horizontal com snap no
   mobile. Posicionada depois de Experiências e antes do CTA final.
 
+## NOVO: mais poder de edição (criar/excluir, sem limite)
+
+- **Acomodações**: `/admin/acomodacoes` agora tem "Nova acomodação" (gera
+  identificador a partir do nome, valida duplicidade) e "Excluir esta
+  acomodação" (com confirmação) na tela de edição. Sem limite de quantas.
+  A Home continua destacando só as 4 românticas curadas por slug; qualquer
+  outra aparece em "Também disponíveis" e na página geral.
+- **Experiências**: mesma capacidade — criar e excluir pelo painel,
+  além de editar as já existentes.
+- **Páginas customizadas**: novo recurso completo. `/admin/paginas` cria
+  páginas novas (ex.: "Galeria", "Sobre a proprietária") com blocos de
+  **texto e foto intercalados**, reordenáveis (mesmo padrão de troca real
+  de posição já usado nas fotos de acomodação). Cada página tem:
+  título, nome opcional no menu, um interruptor "mostrar no menu do site" e
+  um interruptor "publicada". Páginas com "mostrar no menu" ligado aparecem
+  automaticamente no header e no rodapé, sem editar código. Renderizadas em
+  `/[qualquer-slug]` (protegido contra sobrescrever endereços já usados pelo
+  site, como `/admin` ou `/acomodacoes`) e incluídas no `sitemap.xml`.
+
 ## Skill de design instalada
 
 - `frontend-design` (Anthropic, `.claude/skills/frontend-design/`) —
@@ -93,6 +112,13 @@ validado sem execução real de build, lint, type-check e navegador.
 
 ## AGUARDANDO TESTE COM SUPABASE REAL
 
+- **Migration `0003_pages.sql` ainda não foi rodada no projeto real** —
+  até lá, `/admin/paginas` carrega mas não terá as tabelas `pages`/
+  `page_blocks`; o site público já degrada bem (nenhum link novo aparece no
+  menu, `/[slug]` retorna 404 normalmente) — confirmado sem erro de console.
+- Criar uma página de teste com um bloco de texto e um de foto, marcar
+  "mostrar no menu", e confirmar que ela aparece no header/rodapé e abre
+  corretamente em `/seu-slug`.
 - **Migration `0002_reviews.sql` ainda não foi rodada no projeto real** —
   até lá, `/admin/avaliacoes` carrega mas não terá a tabela; o código já
   trata isso sem quebrar (lista vazia), mas cadastrar uma avaliação vai

@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MobileReserveBar } from "@/components/mobile-reserve-bar";
 import { siteSettings as seedSiteSettings } from "@/lib/content";
-import { getSiteSettings } from "@/lib/data";
+import { getNavPages, getSiteSettings } from "@/lib/data";
 
 const editorial = Fraunces({
   variable: "--font-editorial",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const siteSettings = await getSiteSettings();
+  const [siteSettings, navPages] = await Promise.all([getSiteSettings(), getNavPages()]);
 
   return (
     <html
@@ -51,9 +51,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${editorial.variable} ${body.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-cream text-ink">
-        <SiteHeader siteSettings={siteSettings} />
+        <SiteHeader siteSettings={siteSettings} navPages={navPages} />
         <main className="flex-1">{children}</main>
-        <SiteFooter siteSettings={siteSettings} />
+        <SiteFooter siteSettings={siteSettings} navPages={navPages} />
         <MobileReserveBar reserveUrl={siteSettings.defaultReserveUrl} />
       </body>
     </html>

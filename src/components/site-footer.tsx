@@ -1,7 +1,13 @@
 import Link from "next/link";
-import type { SiteSettings } from "@/lib/types";
+import type { NavPage, SiteSettings } from "@/lib/types";
 
-export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
+export function SiteFooter({
+  siteSettings,
+  navPages = [],
+}: {
+  siteSettings: SiteSettings;
+  navPages?: NavPage[];
+}) {
   return (
     <footer id="site-footer" className="border-t border-black/5 bg-bark text-cream/90">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-3">
@@ -18,6 +24,13 @@ export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
             <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/sobre">O Sítio</Link></li>
             <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/localizacao">Localização</Link></li>
             <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/faq">FAQ</Link></li>
+            {navPages.map((p) => (
+              <li key={p.slug}>
+                <Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href={`/${p.slug}`}>
+                  {p.label}
+                </Link>
+              </li>
+            ))}
             <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/contato">Contato</Link></li>
             <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/politicas">Políticas</Link></li>
           </ul>

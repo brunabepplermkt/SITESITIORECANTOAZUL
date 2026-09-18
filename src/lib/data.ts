@@ -8,7 +8,7 @@ import {
   policiesContent as seedPolicies,
   siteSettings as seedSiteSettings,
 } from "@/lib/content";
-import type { Accommodation, Experience, FaqItem, Review, SiteSettings } from "@/lib/types";
+import type { Accommodation, CmsPage, Experience, FaqItem, NavPage, PageBlock, Review, SiteSettings } from "@/lib/types";
 
 /**
  * Camada de leitura pública: tenta o Supabase e cai para o conteúdo seed
@@ -163,6 +163,88 @@ export async function getPublishedReviews(): Promise<Review[]> {
     );
   } catch {
     return [];
+  }
+}
+
+/**
+ * Páginas customizadas: sem Supabase configurado, não existem (não fazem
+ * parte do seed local — são um recurso exclusivo do CMS).
+ */
+export async function getNavPages(): Promise<NavPage[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("pages")
+      .select("slug, title, nav_label")
+      .eq("published", true)
+      .eq("show_in_nav", true)
+      .order("order_index", { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map((row) => ({ slug: row.slug, label: row.nav_label || row.title }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getPublishedPageSlugs(): Promise<string[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.from("pages").select("slug").eq("published", true);
+    if (error || !data) return [];
+    return data.map((row) => row.slug);
+  } catch {
+    return [];
+  }
+}
+
+export async function getPage(slug: string): Promise<CmsPage | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("pages")
+      .select("*, page_blocks(*)")
+      .eq("slug", slug)
+      .eq("published", true)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    const blocks: PageBlock[] = (data.page_blocks ?? [])
+      .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
+      .map(
+        (b: {
+          id: string;
+          type: "text" | "image";
+          content: string | null;
+          image_url: string | null;
+          image_alt: string | null;
+          order_index: number;
+        }): PageBlock =>
+          b.type === "image"
+            ? { id: b.id, type: "image", imageUrl: b.image_url ?? "", imageAlt: b.image_alt ?? "", order: b.order_index }
+            : { id: b.id, type: "text", content: b.content ?? "", order: b.order_index },
+      );
+
+    return {
+      id: data.id,
+      slug: data.slug,
+      title: data.title,
+      navLabel: data.nav_label,
+      showInNav: data.show_in_nav,
+      published: data.published,
+      order: data.order_index,
+      blocks,
+    };
+  } catch {
+    return null;
   }
 }
 

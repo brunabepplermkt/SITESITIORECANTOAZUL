@@ -45,6 +45,26 @@ export type Review = {
   published: boolean;
 };
 
+export type PageBlock =
+  | { id: string; type: "text"; content: string; order: number }
+  | { id: string; type: "image"; imageUrl: string; imageAlt: string; order: number };
+
+export type NavPage = {
+  slug: string;
+  label: string;
+};
+
+export type CmsPage = {
+  id: string;
+  slug: string;
+  title: string;
+  navLabel: string | null;
+  showInNav: boolean;
+  published: boolean;
+  order: number;
+  blocks: PageBlock[];
+};
+
 export type SiteSettings = {
   siteName: string;
   tagline: string;

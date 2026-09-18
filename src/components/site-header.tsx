@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { SiteSettings } from "@/lib/types";
+import type { NavPage, SiteSettings } from "@/lib/types";
 
 const NAV_LINKS = [
   { href: "/acomodacoes", label: "Acomodações" },
@@ -11,10 +11,17 @@ const NAV_LINKS = [
   { href: "/sobre", label: "O Sítio" },
   { href: "/localizacao", label: "Localização" },
   { href: "/faq", label: "FAQ" },
-  { href: "/contato", label: "Contato" },
 ];
 
-export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
+const CONTACT_LINK = { href: "/contato", label: "Contato" };
+
+export function SiteHeader({
+  siteSettings,
+  navPages = [],
+}: {
+  siteSettings: SiteSettings;
+  navPages?: NavPage[];
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -23,6 +30,12 @@ export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
     setLastPathname(pathname);
     setOpen(false);
   }
+
+  const links = [
+    ...NAV_LINKS,
+    ...navPages.map((p) => ({ href: `/${p.slug}`, label: p.label })),
+    CONTACT_LINK,
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-cream/90 backdrop-blur">
@@ -38,7 +51,7 @@ export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -84,7 +97,7 @@ export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
           id="mobile-nav"
           className="flex flex-col gap-1 border-t border-black/5 bg-cream px-5 pb-6 pt-2 lg:hidden"
         >
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

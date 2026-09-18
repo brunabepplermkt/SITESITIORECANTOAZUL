@@ -3,6 +3,7 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { MobileReserveBar } from "@/components/mobile-reserve-bar";
 import { siteSettings as seedSiteSettings } from "@/lib/content";
 import { getSiteSettings } from "@/lib/data";
 
@@ -53,6 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader siteSettings={siteSettings} />
         <main className="flex-1">{children}</main>
         <SiteFooter siteSettings={siteSettings} />
+        <MobileReserveBar reserveUrl={siteSettings.defaultReserveUrl} />
       </body>
     </html>
   );

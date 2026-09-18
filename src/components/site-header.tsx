@@ -26,7 +26,10 @@ export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-cream/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+      <div
+        className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8"
+        style={{ height: "var(--header-h)" }}
+      >
         <Link
           href="/"
           className="focus-ring rounded font-serif text-lg tracking-tight text-bark sm:text-xl"
@@ -56,7 +59,7 @@ export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
 
         <button
           type="button"
-          className="focus-ring flex h-10 w-10 items-center justify-center rounded-full lg:hidden"
+          className="focus-ring -mr-2 flex h-11 w-11 items-center justify-center rounded-full lg:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Fechar menu" : "Abrir menu"}

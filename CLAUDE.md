@@ -37,3 +37,22 @@ Regras permanentes deste projeto. Leia antes de qualquer alteração.
 19. Commits pequenos, claros e coerentes.
 20. Push regular para `origin/main` deste repositório (`brunabepplermkt/sitesitiorecantoazul`) — nunca para outro repositório.
 21. Decisões pequenas/intermediárias de design ou arquitetura são tomadas de forma autônoma, seguindo critério profissional; só interromper o trabalho por bloqueios reais (ex.: credenciais que só o proprietário possui).
+
+## Skills deste projeto
+
+22. **Criação/refinamento visual** — skill `frontend-design` (instalada em
+    `.claude/skills/frontend-design/`, origem: anthropics/claude-plugins-official).
+    Usar em toda decisão de paleta, tipografia, layout e hierarquia. Direção
+    estética fixada para este projeto: luxury/refined, orgânico/natural,
+    editorial, hospedagem boutique, fotografia como protagonista, mobile-first
+    — evitar aparência genérica de template/IA (ver seção "Calibração" do
+    SKILL.md). Em caso de conflito, as regras deste CLAUDE.md e do briefing do
+    proprietário sempre têm prioridade sobre a skill.
+23. **Revisão mobile** — sem plugin dedicado (evitar coleção grande de skills
+    redundantes): revisão manual real em navegador (Playwright/Chromium) nas
+    larguras 390/430/375/768/1440px, nessa ordem de prioridade, cobrindo
+    header, hero, cards, galerias, CTAs, formulários, menu e footer.
+24. **Acessibilidade** — sem plugin dedicado: checklist manual aplicado a cada
+    componente novo/alterado — contraste (mínimo WCAG AA), `:focus-visible`
+    visível, HTML semântico, área de toque ≥ 44×44px, `prefers-reduced-motion`
+    respeitado.

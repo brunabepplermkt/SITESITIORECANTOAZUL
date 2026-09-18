@@ -3,7 +3,6 @@ import type {
   Experience,
   FaqItem,
   SiteSettings,
-  Testimonial,
 } from "./types";
 
 /**
@@ -192,8 +191,6 @@ export const faqs: FaqItem[] = [
     answer: "As condições variam conforme a temporada e serão informadas no atendimento.",
   },
 ];
-
-export const testimonials: Testimonial[] = [];
 
 export const policiesContent = `# Políticas do Sítio Recanto Azul
 

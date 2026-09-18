@@ -3,7 +3,7 @@ import type { SiteSettings } from "@/lib/types";
 
 export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
   return (
-    <footer className="border-t border-black/5 bg-bark text-cream/90">
+    <footer id="site-footer" className="border-t border-black/5 bg-bark text-cream/90">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-3">
         <div>
           <p className="font-serif text-xl">{siteSettings.siteName}</p>
@@ -12,13 +12,14 @@ export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
 
         <div className="text-sm">
           <p className="mb-3 uppercase tracking-wide text-cream/50">Navegue</p>
-          <ul className="space-y-2">
-            <li><Link className="focus-ring rounded hover:text-cream" href="/acomodacoes">Acomodações</Link></li>
-            <li><Link className="focus-ring rounded hover:text-cream" href="/experiencias">Experiências</Link></li>
-            <li><Link className="focus-ring rounded hover:text-cream" href="/sobre">O Sítio</Link></li>
-            <li><Link className="focus-ring rounded hover:text-cream" href="/localizacao">Localização</Link></li>
-            <li><Link className="focus-ring rounded hover:text-cream" href="/faq">FAQ</Link></li>
-            <li><Link className="focus-ring rounded hover:text-cream" href="/politicas">Políticas</Link></li>
+          <ul className="space-y-1">
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/acomodacoes">Acomodações</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/experiencias">Experiências</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/sobre">O Sítio</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/localizacao">Localização</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/faq">FAQ</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/contato">Contato</Link></li>
+            <li><Link className="focus-ring inline-block rounded py-1.5 hover:text-cream" href="/politicas">Políticas</Link></li>
           </ul>
         </div>
 

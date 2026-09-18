@@ -8,7 +8,7 @@ import {
   policiesContent as seedPolicies,
   siteSettings as seedSiteSettings,
 } from "@/lib/content";
-import type { Accommodation, Experience, FaqItem, SiteSettings } from "@/lib/types";
+import type { Accommodation, Experience, FaqItem, Review, SiteSettings } from "@/lib/types";
 
 /**
  * Camada de leitura pública: tenta o Supabase e cai para o conteúdo seed
@@ -127,6 +127,42 @@ export async function getFaqs(): Promise<FaqItem[]> {
     return data.map((row): FaqItem => ({ id: row.id, question: row.question, answer: row.answer }));
   } catch {
     return seedFaqs;
+  }
+}
+
+/**
+ * Avaliações não têm fallback seed: nunca inventamos depoimentos. Sem
+ * Supabase configurado (ou sem nenhuma publicada), retorna lista vazia — a
+ * seção pública correspondente simplesmente não é renderizada.
+ */
+export async function getPublishedReviews(): Promise<Review[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .eq("published", true)
+      .order("order_index", { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map(
+      (row): Review => ({
+        id: row.id,
+        guestName: row.guest_name,
+        text: row.text,
+        rating: row.rating,
+        source: row.source,
+        accommodationSlug: row.accommodation_slug,
+        dateLabel: row.date_label,
+        order: row.order_index,
+        published: row.published,
+      }),
+    );
+  } catch {
+    return [];
   }
 }
 

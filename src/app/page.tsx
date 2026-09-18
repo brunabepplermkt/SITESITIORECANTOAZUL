@@ -1,15 +1,23 @@
 import Link from "next/link";
 import { Photo } from "@/components/photo";
-import { ReserveButton } from "@/components/reserve-button";
-import { getAccommodations, getExperiences, getSiteSettings } from "@/lib/data";
+import { ReserveButton, SecondaryCta } from "@/components/reserve-button";
+import { ReviewsSection } from "@/components/reviews-section";
+import { getAccommodations, getExperiences, getPublishedReviews, getSiteSettings } from "@/lib/data";
+
+const ROMANTIC_SLUGS = ["agata", "mirante", "doce-recanto", "domo-estelar"];
 
 export default async function HomePage() {
-  const [accommodations, experiences, siteSettings] = await Promise.all([
+  const [accommodations, experiences, siteSettings, reviews] = await Promise.all([
     getAccommodations(),
     getExperiences(),
     getSiteSettings(),
+    getPublishedReviews(),
   ]);
-  const featured = accommodations.slice(0, 3);
+
+  const romantic = ROMANTIC_SLUGS.map((slug) => accommodations.find((a) => a.slug === slug)).filter(
+    (a): a is NonNullable<typeof a> => Boolean(a),
+  );
+  const forGroups = accommodations.filter((a) => !ROMANTIC_SLUGS.includes(a.slug));
 
   return (
     <>
@@ -34,12 +42,9 @@ export default async function HomePage() {
           </h1>
           <div className="mt-8 flex flex-wrap gap-4">
             <ReserveButton href={siteSettings.defaultReserveUrl}>Reservar agora</ReserveButton>
-            <Link
-              href="/acomodacoes"
-              className="focus-ring inline-flex items-center justify-center rounded-full border border-cream/40 px-7 py-3.5 text-sm text-cream transition-colors hover:bg-cream/10"
-            >
+            <SecondaryCta href="/acomodacoes" variant="outline" className="text-cream hover:bg-cream/10">
               Ver acomodações
-            </Link>
+            </SecondaryCta>
           </div>
         </div>
       </section>
@@ -57,29 +62,31 @@ export default async function HomePage() {
         </p>
       </section>
 
-      {/* Acomodações em destaque */}
-      <section className="bg-sand/40 py-24">
+      {/* Acomodações românticas em destaque */}
+      <section className="bg-sand py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="mb-12 flex items-end justify-between gap-4">
+          <div className="mb-10 flex items-end justify-between gap-4 sm:mb-12">
             <h2 className="font-serif text-3xl text-bark sm:text-4xl">Acomodações</h2>
-            <Link href="/acomodacoes" className="focus-ring hidden rounded text-sm text-bark/70 underline underline-offset-4 hover:text-bark sm:block">
-              Ver todas
-            </Link>
+            <div className="hidden sm:block">
+              <SecondaryCta href="/acomodacoes" className="text-bark/70">
+                Ver todas
+              </SecondaryCta>
+            </div>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {featured.map((acc) => (
+          <div className="flex gap-5 overflow-x-auto pb-2 -mx-5 px-5 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+            {romantic.map((acc) => (
               <Link
                 key={acc.slug}
                 href={`/acomodacoes/${acc.slug}`}
-                className="focus-ring group block overflow-hidden rounded-sm"
+                className="focus-ring group block w-[78vw] shrink-0 snap-start sm:w-auto sm:shrink"
               >
-                <div className="relative aspect-[4/5] overflow-hidden bg-stone/30">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-stone/30">
                   <Photo
                     src={acc.images[0]?.url ?? "/images/placeholder/hero-home.svg"}
                     alt={acc.images[0]?.alt ?? acc.name}
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    sizes="(min-width: 768px) 33vw, 100vw"
+                    sizes="(min-width: 1024px) 23vw, (min-width: 640px) 46vw, 78vw"
                   />
                 </div>
                 <div className="pt-4">
@@ -90,9 +97,24 @@ export default async function HomePage() {
             ))}
           </div>
 
-          <Link href="/acomodacoes" className="focus-ring mt-10 block text-center text-sm text-bark/70 underline underline-offset-4 sm:hidden">
-            Ver todas as acomodações
-          </Link>
+          <div className="mt-8 text-center sm:hidden">
+            <SecondaryCta href="/acomodacoes" className="text-bark/70">
+              Ver todas as acomodações
+            </SecondaryCta>
+          </div>
+
+          {forGroups.length > 0 && (
+            <p className="mt-10 text-center text-sm text-bark/60 sm:mt-14">
+              Recebendo mais gente?{" "}
+              <Link
+                href="/acomodacoes"
+                className="focus-ring rounded text-bark/70 underline decoration-bark/30 underline-offset-4 hover:decoration-bark"
+              >
+                {forGroups.map((a) => a.name).join(" e ")}
+              </Link>{" "}
+              também estão disponíveis.
+            </p>
+          )}
         </div>
       </section>
 
@@ -115,12 +137,9 @@ export default async function HomePage() {
             Entre mirantes, decks e trilhas, o Recanto Azul foi pensado para que cada
             hóspede viva a natureza de perto — do nascer ao pôr do sol.
           </p>
-          <Link
-            href="/sobre"
-            className="focus-ring mt-6 inline-block rounded text-sm text-bark underline underline-offset-4"
-          >
+          <SecondaryCta href="/sobre" className="mt-6 text-bark">
             Conheça o sítio
-          </Link>
+          </SecondaryCta>
         </div>
       </section>
 
@@ -132,37 +151,33 @@ export default async function HomePage() {
             Momentos preparados para tornar sua estadia inesquecível.
           </p>
 
-          <div className="mt-12 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {experiences.map((exp) => (
-              <div key={exp.slug} className="w-64 shrink-0">
+              <div key={exp.slug} className="w-[70vw] shrink-0 snap-start sm:w-72">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-cream/10">
-                  <Photo src={exp.image.url} alt={exp.image.alt} className="object-cover" sizes="256px" />
+                  <Photo src={exp.image.url} alt={exp.image.alt} className="object-cover" sizes="(min-width: 640px) 288px, 70vw" />
                 </div>
                 <p className="mt-3 font-serif text-lg">{exp.name}</p>
               </div>
             ))}
           </div>
 
-          <Link href="/experiencias" className="focus-ring mt-8 inline-block rounded text-sm text-cream/90 underline underline-offset-4">
+          <SecondaryCta href="/experiencias" className="mt-8 text-cream/90">
             Ver todas as experiências
-          </Link>
+          </SecondaryCta>
         </div>
       </section>
 
-      {/* Depoimentos (preparado para conteúdo futuro) */}
-      <section className="mx-auto max-w-3xl px-5 py-24 text-center sm:px-8">
-        <h2 className="font-serif text-3xl text-bark sm:text-4xl">O que dizem nossos hóspedes</h2>
-        <p className="mt-6 text-bark/60">
-          Em breve, depoimentos reais de quem já viveu a experiência Recanto Azul.
-        </p>
-      </section>
+      <ReviewsSection reviews={reviews} />
 
       {/* CTA final */}
-      <section className="mx-auto max-w-4xl px-5 pb-24 text-center sm:px-8">
-        <h2 className="font-serif text-3xl text-bark sm:text-4xl">Pronto para desacelerar?</h2>
-        <p className="mt-4 text-bark/70">Escolha sua acomodação e reserve seu tempo de descanso.</p>
-        <div className="mt-8 flex justify-center">
-          <ReserveButton href={siteSettings.defaultReserveUrl} />
+      <section className="bg-sand py-24 text-center">
+        <div className="mx-auto max-w-4xl px-5 sm:px-8">
+          <h2 className="font-serif text-3xl text-bark sm:text-4xl">Pronto para desacelerar?</h2>
+          <p className="mt-4 text-bark/70">Escolha sua acomodação e reserve seu tempo de descanso.</p>
+          <div className="mt-8 flex justify-center">
+            <ReserveButton href={siteSettings.defaultReserveUrl} />
+          </div>
         </div>
       </section>
     </>

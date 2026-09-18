@@ -4,6 +4,7 @@ const SECTIONS = [
   { href: "/admin/configuracoes", label: "Configurações do site", desc: "Nome, contato, redes sociais, link de reserva padrão." },
   { href: "/admin/acomodacoes", label: "Acomodações", desc: "Textos, comodidades, fotos e galeria de cada acomodação." },
   { href: "/admin/experiencias", label: "Experiências", desc: "Momentos e atividades exibidos no site." },
+  { href: "/admin/avaliacoes", label: "Avaliações", desc: "Depoimentos reais de hóspedes (Airbnb, Booking, Google, direto)." },
   { href: "/admin/faq", label: "FAQ", desc: "Perguntas frequentes exibidas para os hóspedes." },
   { href: "/admin/politicas", label: "Políticas", desc: "Texto de políticas de reserva e regras da casa." },
 ];

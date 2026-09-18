@@ -12,6 +12,7 @@ const ADMIN_LINKS = [
   { href: "/admin/configuracoes", label: "Configurações" },
   { href: "/admin/acomodacoes", label: "Acomodações" },
   { href: "/admin/experiencias", label: "Experiências" },
+  { href: "/admin/avaliacoes", label: "Avaliações" },
   { href: "/admin/faq", label: "FAQ" },
   { href: "/admin/politicas", label: "Políticas" },
 ];

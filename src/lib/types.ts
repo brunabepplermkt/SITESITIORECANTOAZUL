@@ -31,9 +31,18 @@ export type FaqItem = {
   answer: string;
 };
 
-export type Testimonial = {
+export type ReviewSource = "airbnb" | "booking" | "google" | "direto" | "outro";
+
+export type Review = {
+  id: string;
   guestName: string;
-  quote: string;
+  text: string;
+  rating: number | null;
+  source: ReviewSource;
+  accommodationSlug: string | null;
+  dateLabel: string | null;
+  order: number;
+  published: boolean;
 };
 
 export type SiteSettings = {

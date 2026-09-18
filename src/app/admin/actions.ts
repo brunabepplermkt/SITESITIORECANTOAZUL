@@ -239,6 +239,108 @@ export async function deleteFaqAction(formData: FormData) {
   revalidatePath("/admin/faq");
 }
 
+const REVIEW_SOURCES = ["airbnb", "booking", "google", "direto", "outro"];
+
+function parseRating(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const num = Number(raw);
+  if (!Number.isInteger(num) || num < 1 || num > 5) {
+    throw new Error("Nota inválida: use um número inteiro de 1 a 5, ou deixe em branco.");
+  }
+  return num;
+}
+
+export async function addReviewAction(formData: FormData) {
+  const guestName = String(formData.get("guestName") ?? "").trim();
+  const text = String(formData.get("text") ?? "").trim();
+  const source = String(formData.get("source") ?? "direto");
+  if (!guestName || !text) throw new Error("Nome do hóspede e texto da avaliação são obrigatórios.");
+  if (!REVIEW_SOURCES.includes(source)) throw new Error("Origem inválida.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("reviews").insert({
+    guest_name: guestName,
+    text,
+    rating: parseRating(formData.get("rating")),
+    source,
+    accommodation_slug: String(formData.get("accommodationSlug") ?? "") || null,
+    date_label: String(formData.get("dateLabel") ?? "").trim() || null,
+    order_index: Number(formData.get("orderIndex") ?? 0),
+    published: formData.get("published") === "on",
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/avaliacoes");
+}
+
+export async function updateReviewAction(formData: FormData) {
+  const id = String(formData.get("id"));
+  const guestName = String(formData.get("guestName") ?? "").trim();
+  const text = String(formData.get("text") ?? "").trim();
+  const source = String(formData.get("source") ?? "direto");
+  if (!guestName || !text) throw new Error("Nome do hóspede e texto da avaliação são obrigatórios.");
+  if (!REVIEW_SOURCES.includes(source)) throw new Error("Origem inválida.");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("reviews")
+    .update({
+      guest_name: guestName,
+      text,
+      rating: parseRating(formData.get("rating")),
+      source,
+      accommodation_slug: String(formData.get("accommodationSlug") ?? "") || null,
+      date_label: String(formData.get("dateLabel") ?? "").trim() || null,
+      published: formData.get("published") === "on",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/avaliacoes");
+}
+
+export async function deleteReviewAction(formData: FormData) {
+  const id = String(formData.get("id"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("reviews").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/avaliacoes");
+}
+
+export async function reorderReviewAction(formData: FormData) {
+  const currentId = String(formData.get("currentId"));
+  const currentOrder = Number(formData.get("currentOrder"));
+  const neighborId = String(formData.get("neighborId") ?? "");
+  const neighborOrder = Number(formData.get("neighborOrder"));
+
+  if (!neighborId || neighborId === "undefined" || !Number.isFinite(neighborOrder)) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error: error1 } = await supabase
+    .from("reviews")
+    .update({ order_index: neighborOrder })
+    .eq("id", currentId);
+  if (error1) throw new Error(error1.message);
+
+  const { error: error2 } = await supabase
+    .from("reviews")
+    .update({ order_index: currentOrder })
+    .eq("id", neighborId);
+  if (error2) throw new Error(error2.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/avaliacoes");
+}
+
 export async function updatePoliciesAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("policies").upsert({

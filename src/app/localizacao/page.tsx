@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { siteSettings } from "@/lib/content";
+import { getSiteSettings } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Localização",
   description: "Como chegar ao Sítio Recanto Azul.",
 };
 
-export default function LocalizacaoPage() {
+export default async function LocalizacaoPage() {
+  const siteSettings = await getSiteSettings();
   return (
     <div className="mx-auto max-w-4xl px-5 py-20 sm:px-8">
       <p className="mb-3 text-center text-sm uppercase tracking-[0.2em] text-clay">Localização</p>

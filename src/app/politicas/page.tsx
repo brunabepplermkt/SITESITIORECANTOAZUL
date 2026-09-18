@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { policiesContent } from "@/lib/content";
+import { getPolicies } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Políticas",
   description: "Políticas de reserva, cancelamento e regras da casa do Sítio Recanto Azul.",
 };
 
-export default function PoliticasPage() {
+export default async function PoliticasPage() {
+  const policiesContent = await getPolicies();
   const paragraphs = policiesContent
     .split("\n")
     .filter((line) => line.trim().length > 0 && !line.startsWith("#"));

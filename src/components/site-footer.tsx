@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { siteSettings } from "@/lib/content";
+import type { SiteSettings } from "@/lib/types";
 
-export function SiteFooter() {
+export function SiteFooter({ siteSettings }: { siteSettings: SiteSettings }) {
   return (
     <footer className="border-t border-black/5 bg-bark text-cream/90">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-3">

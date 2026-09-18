@@ -2,16 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Photo } from "@/components/photo";
 import { ReserveButton } from "@/components/reserve-button";
-import { accommodations } from "@/lib/content";
+import { accommodations as seedAccommodations } from "@/lib/content";
+import { getAccommodation } from "@/lib/data";
 
 type Params = { slug: string };
 
-function getAccommodation(slug: string) {
-  return accommodations.find((a) => a.slug === slug);
-}
-
 export function generateStaticParams() {
-  return accommodations.map((a) => ({ slug: a.slug }));
+  return seedAccommodations.map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({
@@ -20,7 +17,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const acc = getAccommodation(slug);
+  const acc = await getAccommodation(slug);
   if (!acc) return {};
   return {
     title: acc.name,
@@ -39,7 +36,7 @@ export default async function AcomodacaoPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const acc = getAccommodation(slug);
+  const acc = await getAccommodation(slug);
   if (!acc) notFound();
 
   const jsonLd = {

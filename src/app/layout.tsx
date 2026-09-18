@@ -3,7 +3,8 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { siteSettings } from "@/lib/content";
+import { siteSettings as seedSiteSettings } from "@/lib/content";
+import { getSiteSettings } from "@/lib/data";
 
 const editorial = Fraunces({
   variable: "--font-editorial",
@@ -22,17 +23,17 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sitiorecantoazul.co
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${siteSettings.siteName} — ${siteSettings.tagline}`,
-    template: `%s — ${siteSettings.siteName}`,
+    default: `${seedSiteSettings.siteName} — ${seedSiteSettings.tagline}`,
+    template: `%s — ${seedSiteSettings.siteName}`,
   },
   description:
     "Hospedagem diferenciada em meio à natureza. Acomodações românticas e para grupos, experiências exclusivas e privacidade para desacelerar.",
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: siteSettings.siteName,
-    title: siteSettings.siteName,
-    description: siteSettings.tagline,
+    siteName: seedSiteSettings.siteName,
+    title: seedSiteSettings.siteName,
+    description: seedSiteSettings.tagline,
   },
   robots: {
     index: true,
@@ -40,16 +41,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const siteSettings = await getSiteSettings();
+
   return (
     <html
       lang="pt-BR"
       className={`${editorial.variable} ${body.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-cream text-ink">
-        <SiteHeader />
+        <SiteHeader siteSettings={siteSettings} />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <SiteFooter siteSettings={siteSettings} />
       </body>
     </html>
   );

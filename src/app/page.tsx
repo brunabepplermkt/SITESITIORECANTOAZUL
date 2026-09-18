@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { Photo } from "@/components/photo";
 import { ReserveButton } from "@/components/reserve-button";
-import { accommodations, experiences, siteSettings } from "@/lib/content";
+import { getAccommodations, getExperiences, getSiteSettings } from "@/lib/data";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [accommodations, experiences, siteSettings] = await Promise.all([
+    getAccommodations(),
+    getExperiences(),
+    getSiteSettings(),
+  ]);
   const featured = accommodations.slice(0, 3);
 
   return (

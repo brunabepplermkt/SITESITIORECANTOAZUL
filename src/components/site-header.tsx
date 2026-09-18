@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { siteSettings } from "@/lib/content";
+import type { SiteSettings } from "@/lib/types";
 
 const NAV_LINKS = [
   { href: "/acomodacoes", label: "Acomodações" },
@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { href: "/contato", label: "Contato" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ siteSettings }: { siteSettings: SiteSettings }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);

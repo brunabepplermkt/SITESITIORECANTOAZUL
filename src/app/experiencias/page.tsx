@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { Photo } from "@/components/photo";
-import { experiences } from "@/lib/content";
+import { getExperiences } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Experiências",
   description: "Momentos preparados no Sítio Recanto Azul: mirantes, decks, balanços, piquenique e passeio a cavalo.",
 };
 
-export default function ExperienciasPage() {
+export default async function ExperienciasPage() {
+  const experiences = await getExperiences();
   return (
     <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
       <header className="mx-auto max-w-2xl text-center">

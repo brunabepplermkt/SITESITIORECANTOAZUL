@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { ReserveButton } from "@/components/reserve-button";
-import { siteSettings } from "@/lib/content";
+import { getSiteSettings } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Contato",
   description: "Fale com o Sítio Recanto Azul.",
 };
 
-export default function ContatoPage() {
+export default async function ContatoPage() {
+  const siteSettings = await getSiteSettings();
   return (
     <div className="mx-auto max-w-2xl px-5 py-20 text-center sm:px-8">
       <p className="mb-3 text-sm uppercase tracking-[0.2em] text-clay">Contato</p>

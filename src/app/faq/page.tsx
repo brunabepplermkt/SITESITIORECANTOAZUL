@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { faqs } from "@/lib/content";
+import { getFaqs } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Perguntas Frequentes",
   description: "Tire suas dúvidas sobre reservas e estadia no Sítio Recanto Azul.",
 };
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const faqs = await getFaqs();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

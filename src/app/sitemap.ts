@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { accommodations } from "@/lib/content";
+import { getAccommodations } from "@/lib/data";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sitiorecantoazul.com.br";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const accommodations = await getAccommodations();
   const staticRoutes = [
     "",
     "/acomodacoes",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Photo } from "@/components/photo";
-import { accommodations } from "@/lib/content";
+import { getAccommodations } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Acomodações",
@@ -9,7 +9,8 @@ export const metadata: Metadata = {
     "Conheça as acomodações do Sítio Recanto Azul: Ágata, Mirante, Doce Recanto, Domo Estelar, Chalé para Grupos e Celeiro.",
 };
 
-export default function AcomodacoesPage() {
+export default async function AcomodacoesPage() {
+  const accommodations = await getAccommodations();
   return (
     <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
       <header className="mx-auto max-w-2xl text-center">

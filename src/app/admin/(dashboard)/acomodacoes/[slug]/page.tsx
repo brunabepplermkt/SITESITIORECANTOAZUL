@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getAccommodation } from "@/lib/data";
-import { updateAccommodationAction } from "../../../actions";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { deleteAccommodationAction, updateAccommodationAction } from "../../../actions";
 import { ImageManager } from "./image-manager";
 
 export default async function AdminAcomodacaoPage({
@@ -67,6 +68,18 @@ export default async function AdminAcomodacaoPage({
         <div className="mt-4">
           <ImageManager slug={acc.slug} images={acc.images} />
         </div>
+      </div>
+
+      <div className="mt-14 border-t border-black/10 pt-6">
+        <form action={deleteAccommodationAction}>
+          <input type="hidden" name="slug" value={acc.slug} />
+          <ConfirmSubmitButton
+            confirmMessage={`Excluir "${acc.name}" definitivamente? Isso também remove suas fotos cadastradas. Esta ação não pode ser desfeita.`}
+            className="focus-ring text-sm text-red-700 underline"
+          >
+            Excluir esta acomodação
+          </ConfirmSubmitButton>
+        </form>
       </div>
     </div>
   );

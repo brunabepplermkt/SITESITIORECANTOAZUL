@@ -17,7 +17,7 @@ export default async function HomePage() {
   const romantic = ROMANTIC_SLUGS.map((slug) => accommodations.find((a) => a.slug === slug)).filter(
     (a): a is NonNullable<typeof a> => Boolean(a),
   );
-  const forGroups = accommodations.filter((a) => !ROMANTIC_SLUGS.includes(a.slug));
+  const otherAccommodations = accommodations.filter((a) => !ROMANTIC_SLUGS.includes(a.slug));
 
   return (
     <>
@@ -103,16 +103,16 @@ export default async function HomePage() {
             </SecondaryCta>
           </div>
 
-          {forGroups.length > 0 && (
+          {otherAccommodations.length > 0 && (
             <p className="mt-10 text-center text-sm text-bark/60 sm:mt-14">
-              Recebendo mais gente?{" "}
+              Também disponíveis:{" "}
               <Link
                 href="/acomodacoes"
                 className="focus-ring rounded text-bark/70 underline decoration-bark/30 underline-offset-4 hover:decoration-bark"
               >
-                {forGroups.map((a) => a.name).join(" e ")}
-              </Link>{" "}
-              também estão disponíveis.
+                {otherAccommodations.map((a) => a.name).join(", ")}
+              </Link>
+              .
             </p>
           )}
         </div>

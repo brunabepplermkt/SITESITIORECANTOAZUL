@@ -23,6 +23,16 @@ function parsePrice(value: FormDataEntryValue | null): number | null {
   return num;
 }
 
+function slugify(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 function sanitizeFileName(name: string): string {
@@ -83,6 +93,49 @@ export async function updateAccommodationAction(formData: FormData) {
   revalidatePath("/acomodacoes");
   revalidatePath(`/acomodacoes/${slug}`);
   revalidatePath(`/admin/acomodacoes/${slug}`);
+}
+
+export async function createAccommodationAction(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) throw new Error("Nome da acomodação é obrigatório.");
+
+  const slug = slugify(name);
+  if (!slug) throw new Error("Não foi possível gerar um identificador a partir desse nome.");
+
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("accommodations")
+    .select("slug", { count: "exact", head: true });
+
+  const { error } = await supabase.from("accommodations").insert({
+    slug,
+    name,
+    order_index: count ?? 0,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(`Já existe uma acomodação com identificador "${slug}". Escolha um nome diferente.`);
+    }
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/acomodacoes");
+  revalidatePath("/admin/acomodacoes");
+  redirect(`/admin/acomodacoes/${slug}`);
+}
+
+export async function deleteAccommodationAction(formData: FormData) {
+  const slug = String(formData.get("slug"));
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("accommodations").delete().eq("slug", slug);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/acomodacoes");
+  revalidatePath("/admin/acomodacoes");
+  redirect("/admin/acomodacoes");
 }
 
 export async function addAccommodationImageAction(formData: FormData) {

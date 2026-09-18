@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient as createServerSupabase } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import {
   accommodations as seedAccommodations,
@@ -20,7 +20,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   if (!isSupabaseConfigured()) return seedSiteSettings;
 
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("site_settings")
       .select("*")
@@ -48,7 +48,7 @@ export async function getAccommodations(): Promise<Accommodation[]> {
   if (!isSupabaseConfigured()) return seedAccommodations;
 
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("accommodations")
       .select("*, accommodation_images(*)")
@@ -91,7 +91,7 @@ export async function getExperiences(): Promise<Experience[]> {
   if (!isSupabaseConfigured()) return seedExperiences;
 
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("experiences")
       .select("*")
@@ -116,7 +116,7 @@ export async function getFaqs(): Promise<FaqItem[]> {
   if (!isSupabaseConfigured()) return seedFaqs;
 
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("faqs")
       .select("*")
@@ -134,7 +134,7 @@ export async function getPolicies(): Promise<string> {
   if (!isSupabaseConfigured()) return seedPolicies;
 
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("policies")
       .select("*")

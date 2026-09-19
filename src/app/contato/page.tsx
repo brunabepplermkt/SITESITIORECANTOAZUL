@@ -59,7 +59,9 @@ export default async function ContatoPage() {
       </dl>
 
       <div className="mt-10 flex justify-center">
-        <ReserveButton href={`https://wa.me/${siteSettings.whatsapp}`}>Falar pelo WhatsApp</ReserveButton>
+        <ReserveButton href={`https://wa.me/${siteSettings.whatsapp}`} analyticsEvent="whatsapp_click">
+          Falar pelo WhatsApp
+        </ReserveButton>
       </div>
     </div>
   );

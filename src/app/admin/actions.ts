@@ -3,6 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Troca real das posições de duas linhas em uma única chamada RPC
+ * (`reorder_swap`, migration 0005) — atômica no banco, para nunca deixar
+ * duas linhas com o mesmo order_index se a segunda parte de dois UPDATEs
+ * separados falhasse no meio do caminho.
+ */
+async function swapOrder(
+  supabase: SupabaseClient,
+  table: "accommodation_images" | "faqs" | "home_sections" | "reviews" | "page_blocks",
+  idColumn: "id" | "key",
+  currentId: string,
+  currentOrder: number,
+  neighborId: string,
+  neighborOrder: number,
+) {
+  const { error } = await supabase.rpc("reorder_swap", {
+    p_table: table,
+    p_id_column: idColumn,
+    p_order_column: "order_index",
+    p_id_a: currentId,
+    p_order_a: currentOrder,
+    p_id_b: neighborId,
+    p_order_b: neighborOrder,
+  });
+  if (error) throw new Error(error.message);
+}
 
 function parseList(value: FormDataEntryValue | null): string[] {
   if (!value) return [];
@@ -38,6 +66,22 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 function sanitizeFileName(name: string): string {
   const base = name.normalize("NFKD").replace(/[̀-ͯ]/g, "");
   return base.replace(/[^a-zA-Z0-9.\-_]/g, "-").replace(/-+/g, "-").slice(-100);
+}
+
+/**
+ * Extrai o caminho de um arquivo dentro do bucket `accommodation-images` a
+ * partir da sua URL pública — só quando a URL realmente é do Storage deste
+ * projeto. Placeholders locais (`/images/placeholder/...`) e qualquer URL
+ * externa retornam `null`, e nesse caso nada é apagado do Storage (evita
+ * excluir arquivo de outro lugar por engano).
+ */
+function accommodationImageStoragePath(url: string): string | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+  const prefix = `${supabaseUrl}/storage/v1/object/public/accommodation-images/`;
+  if (!url.startsWith(prefix)) return null;
+  const path = url.slice(prefix.length);
+  return path || null;
 }
 
 export async function signOutAction() {
@@ -277,8 +321,20 @@ export async function deleteAccommodationImageAction(formData: FormData) {
   const id = String(formData.get("id"));
   const slug = String(formData.get("slug"));
 
+  const { data: row } = await supabase.from("accommodation_images").select("url").eq("id", id).maybeSingle();
+
   const { error } = await supabase.from("accommodation_images").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  // O registro já sumiu do site nesse ponto (o que importa para a
+  // proprietária); a remoção do arquivo no Storage é best-effort — se
+  // falhar, só sobra um arquivo órfão (espaço desperdiçado, não um bug
+  // visível), então não derruba a ação inteira.
+  const path = row?.url ? accommodationImageStoragePath(row.url) : null;
+  if (path) {
+    const { error: storageError } = await supabase.storage.from("accommodation-images").remove([path]);
+    if (storageError) console.error("Falha ao remover arquivo do Storage:", storageError.message);
+  }
 
   revalidatePath(`/acomodacoes/${slug}`);
   revalidatePath(`/admin/acomodacoes/${slug}`);
@@ -297,19 +353,7 @@ export async function reorderAccommodationImageAction(formData: FormData) {
     return;
   }
 
-  // Troca real das posições (não apenas copia o valor do vizinho), para
-  // nunca deixar duas imagens com o mesmo order_index.
-  const { error: error1 } = await supabase
-    .from("accommodation_images")
-    .update({ order_index: neighborOrder })
-    .eq("id", currentId);
-  if (error1) throw new Error(error1.message);
-
-  const { error: error2 } = await supabase
-    .from("accommodation_images")
-    .update({ order_index: currentOrder })
-    .eq("id", neighborId);
-  if (error2) throw new Error(error2.message);
+  await swapOrder(supabase, "accommodation_images", "id", currentId, currentOrder, neighborId, neighborOrder);
 
   revalidatePath(`/acomodacoes/${slug}`);
   revalidatePath(`/admin/acomodacoes/${slug}`);
@@ -484,11 +528,7 @@ export async function reorderFaqAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error: error1 } = await supabase.from("faqs").update({ order_index: neighborOrder }).eq("id", currentId);
-  if (error1) throw new Error(error1.message);
-
-  const { error: error2 } = await supabase.from("faqs").update({ order_index: currentOrder }).eq("id", neighborId);
-  if (error2) throw new Error(error2.message);
+  await swapOrder(supabase, "faqs", "id", currentId, currentOrder, neighborId, neighborOrder);
 
   revalidatePath("/faq");
   revalidatePath("/admin/faq");
@@ -580,17 +620,7 @@ export async function reorderReviewAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error: error1 } = await supabase
-    .from("reviews")
-    .update({ order_index: neighborOrder })
-    .eq("id", currentId);
-  if (error1) throw new Error(error1.message);
-
-  const { error: error2 } = await supabase
-    .from("reviews")
-    .update({ order_index: currentOrder })
-    .eq("id", neighborId);
-  if (error2) throw new Error(error2.message);
+  await swapOrder(supabase, "reviews", "id", currentId, currentOrder, neighborId, neighborOrder);
 
   revalidatePath("/");
   revalidatePath("/admin/avaliacoes");
@@ -763,8 +793,16 @@ export async function deleteBlockAction(formData: FormData) {
   const slug = String(formData.get("slug"));
 
   const supabase = await createClient();
+  const { data: row } = await supabase.from("page_blocks").select("type, image_url").eq("id", id).maybeSingle();
+
   const { error } = await supabase.from("page_blocks").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  const path = row?.type === "image" && row.image_url ? accommodationImageStoragePath(row.image_url) : null;
+  if (path) {
+    const { error: storageError } = await supabase.storage.from("accommodation-images").remove([path]);
+    if (storageError) console.error("Falha ao remover arquivo do Storage:", storageError.message);
+  }
 
   revalidatePath(`/${slug}`);
   revalidatePath(`/admin/paginas/${slug}`);
@@ -782,17 +820,7 @@ export async function reorderBlockAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error: error1 } = await supabase
-    .from("page_blocks")
-    .update({ order_index: neighborOrder })
-    .eq("id", currentId);
-  if (error1) throw new Error(error1.message);
-
-  const { error: error2 } = await supabase
-    .from("page_blocks")
-    .update({ order_index: currentOrder })
-    .eq("id", neighborId);
-  if (error2) throw new Error(error2.message);
+  await swapOrder(supabase, "page_blocks", "id", currentId, currentOrder, neighborId, neighborOrder);
 
   revalidatePath(`/${slug}`);
   revalidatePath(`/admin/paginas/${slug}`);
@@ -851,18 +879,15 @@ export async function reorderHomeSectionAction(formData: FormData) {
     return;
   }
 
-  const supabase = await createClient();
-  const { error: error1 } = await supabase
-    .from("home_sections")
-    .update({ order_index: neighborOrder })
-    .eq("key", currentKey);
-  if (error1) throw new Error(error1.message);
+  // O Hero sempre abre a Home — a Home renderiza essa seção primeiro
+  // independente do order_index salvo (ver `orderHomeSections` em
+  // lib/data.ts), então mover o Hero ou trocar outra seção com ele nunca
+  // teria efeito visual real. Bloqueado aqui também para não fingir que a
+  // reordenação funcionou quando na prática é ignorada.
+  if (currentKey === "hero" || neighborKey === "hero") return;
 
-  const { error: error2 } = await supabase
-    .from("home_sections")
-    .update({ order_index: currentOrder })
-    .eq("key", neighborKey);
-  if (error2) throw new Error(error2.message);
+  const supabase = await createClient();
+  await swapOrder(supabase, "home_sections", "key", currentKey, currentOrder, neighborKey, neighborOrder);
 
   revalidatePath("/");
   revalidatePath("/admin/home");

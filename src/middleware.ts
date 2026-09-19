@@ -65,8 +65,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isLoginRoute && user) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+  // Estar autenticado no Supabase não é suficiente: só quem está cadastrado
+  // em `admin_users` pode usar o painel. RLS já bloqueia qualquer escrita de
+  // um usuário autenticado não-admin, mas sem essa checagem aqui a pessoa
+  // ainda entraria no /admin e veria (sem conseguir salvar) telas que não
+  // deveriam nem abrir para ela. Verificado uma única vez por requisição via
+  // RPC `is_admin()` (mesma função usada pelas policies).
+  if (isAdminRoute && user) {
+    let isAdmin = false;
+    try {
+      const { data } = await supabase.rpc("is_admin");
+      isAdmin = data === true;
+    } catch {
+      isAdmin = false;
+    }
+
+    if (!isAdmin) {
+      // Encerra a sessão desse usuário não autorizado antes de mandá-lo para
+      // o login: a próxima requisição chega sem `user`, cai no primeiro
+      // `if` acima e vai para /admin/login normalmente — nunca de volta para
+      // esta checagem, então não há loop de redirect.
+      await supabase.auth.signOut();
+      const url = new URL("/admin/login", request.url);
+      url.searchParams.set("erro", "acesso-negado");
+      return NextResponse.redirect(url);
+    }
+
+    if (isLoginRoute) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
   return response;

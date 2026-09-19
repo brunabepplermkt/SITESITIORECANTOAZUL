@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MobileReserveBar } from "@/components/mobile-reserve-bar";
-import { siteSettings as seedSiteSettings } from "@/lib/content";
+import { AnalyticsScripts } from "@/components/analytics-scripts";
 import { getNavPages, getSiteSettings } from "@/lib/data";
 import { getBookingHref, getBookingTarget, isBookingActive } from "@/lib/booking";
 
@@ -22,28 +23,37 @@ const body = Inter({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sitiorecantoazul.com.br";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: `${seedSiteSettings.siteName} — ${seedSiteSettings.tagline}`,
-    template: `%s — ${seedSiteSettings.siteName}`,
-  },
-  description:
-    "Hospedagem diferenciada em meio à natureza. Acomodações românticas e para grupos, experiências exclusivas e privacidade para desacelerar.",
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    siteName: seedSiteSettings.siteName,
-    title: seedSiteSettings.siteName,
-    description: seedSiteSettings.tagline,
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+const DEFAULT_DESCRIPTION =
+  "Hospedagem diferenciada em meio à natureza. Acomodações românticas e para grupos, experiências exclusivas e privacidade para desacelerar.";
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export async function generateMetadata(): Promise<Metadata> {
+  const siteSettings = await getSiteSettings();
+  const title = siteSettings.seoTitle || `${siteSettings.siteName} — ${siteSettings.tagline}`;
+  const description = siteSettings.seoDescription || DEFAULT_DESCRIPTION;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: `%s — ${siteSettings.siteName}`,
+    },
+    description,
+    openGraph: {
+      type: "website",
+      locale: "pt_BR",
+      siteName: siteSettings.siteName,
+      title,
+      description,
+      images: siteSettings.ogImageUrl ? [{ url: siteSettings.ogImageUrl }] : undefined,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const [siteSettings, navPages] = await Promise.all([getSiteSettings(), getNavPages()]);
 
   return (
@@ -52,6 +62,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${editorial.variable} ${body.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-cream text-ink">
+        <AnalyticsScripts googleAnalyticsId={siteSettings.googleAnalyticsId} metaPixelId={siteSettings.metaPixelId} />
         <SiteHeader siteSettings={siteSettings} navPages={navPages} />
         <main className="flex-1">{children}</main>
         <SiteFooter siteSettings={siteSettings} navPages={navPages} />

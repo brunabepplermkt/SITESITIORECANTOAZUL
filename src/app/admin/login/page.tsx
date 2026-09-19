@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AccessDeniedNotice } from "./access-denied-notice";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -36,6 +37,10 @@ export default function AdminLoginPage() {
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-5 py-20">
       <h1 className="font-serif text-2xl text-bark">Painel administrativo</h1>
       <p className="mt-2 text-sm text-bark/70">Entre com sua conta para editar o site.</p>
+
+      <Suspense fallback={null}>
+        <AccessDeniedNotice />
+      </Suspense>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>

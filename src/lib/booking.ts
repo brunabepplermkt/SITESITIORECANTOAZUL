@@ -19,8 +19,46 @@ export type BookingParams = {
   accommodationSlug?: string;
 };
 
-export function isBookingActive(settings: SiteSettings): boolean {
-  return settings.bookingProvider !== "none";
+function isValidHttpUrl(value: string | null | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidHttpsUrl(value: string | null | undefined): value is string {
+  if (!value) return false;
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Um provider só está "ativo" quando existe uma URL de destino de verdade —
+ * nunca um botão que leva a `href="#"`. Cada modo tem sua própria condição:
+ * - `none`: sempre inativo.
+ * - `link`/`zeloa`: precisa de `bookingBaseUrl` (ou o link de reserva
+ *   alternativo `defaultReserveUrl`) apontando para http(s).
+ * - `widget`: precisa de `bookingWidgetEmbedUrl` em https (nunca embutimos
+ *   um iframe apontando para http).
+ */
+export function isBookingActive(settings: SiteSettings, accommodationOverrideUrl?: string | null): boolean {
+  if (settings.bookingProvider === "none") return false;
+
+  if (accommodationOverrideUrl && isValidHttpUrl(accommodationOverrideUrl)) return true;
+
+  if (settings.bookingProvider === "widget") {
+    return isValidHttpsUrl(settings.bookingWidgetEmbedUrl);
+  }
+
+  // "link" e "zeloa" (Zeloa ainda não implementado — usa a mesma regra de um
+  // link externo até a integração real existir).
+  return isValidHttpUrl(settings.bookingBaseUrl) || isValidHttpUrl(settings.defaultReserveUrl);
 }
 
 export function getBookingHref(
@@ -28,10 +66,14 @@ export function getBookingHref(
   params: BookingParams = {},
   accommodationOverrideUrl?: string | null,
 ): string {
-  if (!isBookingActive(settings)) return "#";
+  if (!isBookingActive(settings, accommodationOverrideUrl)) return "#";
 
-  const base = accommodationOverrideUrl || settings.bookingBaseUrl || settings.defaultReserveUrl;
-  if (!base) return "#";
+  const base =
+    (accommodationOverrideUrl && isValidHttpUrl(accommodationOverrideUrl) ? accommodationOverrideUrl : null) ||
+    (settings.bookingProvider === "widget" ? settings.bookingWidgetEmbedUrl : settings.bookingBaseUrl) ||
+    settings.defaultReserveUrl;
+
+  if (!base || !isValidHttpUrl(base)) return "#";
 
   try {
     const url = new URL(base);

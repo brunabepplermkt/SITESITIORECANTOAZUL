@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Photo } from "@/components/photo";
 import { ReserveButton } from "@/components/reserve-button";
+import { BookingSearch } from "@/components/booking-search";
+import { TrackView } from "@/components/track-view";
 import { accommodations as seedAccommodations } from "@/lib/content";
 import { getAccommodation, getSiteSettings } from "@/lib/data";
 import { getBookingHref, getBookingTarget, isBookingActive } from "@/lib/booking";
@@ -20,13 +22,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const acc = await getAccommodation(slug);
   if (!acc) return {};
+
+  const title = acc.seoTitle || acc.name;
+  const description = acc.seoDescription || acc.shortDescription || acc.description;
+  const ogImage = acc.ogImageUrl || acc.images[0]?.url;
+
   return {
-    title: acc.name,
-    description: acc.description,
+    title,
+    description,
     openGraph: {
-      title: acc.name,
-      description: acc.tagline,
-      images: acc.images[0] ? [{ url: acc.images[0].url }] : undefined,
+      title,
+      description,
+      images: ogImage ? [{ url: ogImage }] : undefined,
     },
   };
 }
@@ -40,7 +47,7 @@ export default async function AcomodacaoPage({
   const [acc, siteSettings] = await Promise.all([getAccommodation(slug), getSiteSettings()]);
   if (!acc) notFound();
 
-  const bookingActive = isBookingActive(siteSettings);
+  const bookingActive = isBookingActive(siteSettings, acc.reserveUrl || null);
   const bookingHref = getBookingHref(siteSettings, { accommodationSlug: acc.slug }, acc.reserveUrl || null);
   const bookingTarget = getBookingTarget(siteSettings);
 
@@ -54,6 +61,7 @@ export default async function AcomodacaoPage({
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+      <TrackView event="accommodation_view" payload={{ accommodationSlug: acc.slug }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -116,12 +124,27 @@ export default async function AcomodacaoPage({
             </p>
           )}
           {bookingActive && (
-            <ReserveButton href={bookingHref} target={bookingTarget} className="mt-6 w-full">
+            <ReserveButton
+              href={bookingHref}
+              target={bookingTarget}
+              analyticsPayload={{ accommodationSlug: acc.slug }}
+              className="mt-6 w-full"
+            >
               {siteSettings.bookingCtaLabel} — Ver disponibilidade
             </ReserveButton>
           )}
         </aside>
       </div>
+
+      {siteSettings.bookingShowSearchAccommodation && (
+        <div className="mt-14">
+          <BookingSearch
+            settings={siteSettings}
+            accommodationSlug={acc.slug}
+            accommodationOverrideUrl={acc.reserveUrl || null}
+          />
+        </div>
+      )}
     </div>
   );
 }

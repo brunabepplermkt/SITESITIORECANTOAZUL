@@ -31,6 +31,13 @@ export default async function AdminHomePage() {
               {!section.visible && <span className="text-xs uppercase tracking-wide text-clay">Oculta</span>}
             </div>
 
+            {section.key === "hero" && (
+              <p className="mb-3 text-xs text-bark/50">
+                Esta seção sempre abre a Home — não pode ser reordenada. Editar seu conteúdo abaixo funciona
+                normalmente; só a posição é fixa.
+              </p>
+            )}
+
             <form action={updateHomeSectionAction} className="space-y-3">
               <input type="hidden" name="key" value={section.key} />
 
@@ -113,26 +120,32 @@ export default async function AdminHomePage() {
               </button>
             </form>
 
-            <div className="mt-3 flex items-center gap-4 text-xs text-bark/60">
-              <form action={reorderHomeSectionAction}>
-                <input type="hidden" name="currentKey" value={section.key} />
-                <input type="hidden" name="currentOrder" value={section.order} />
-                <input type="hidden" name="neighborKey" value={sections[i - 1]?.key} />
-                <input type="hidden" name="neighborOrder" value={sections[i - 1]?.order} />
-                <button type="submit" disabled={i === 0} className="focus-ring disabled:opacity-30">
-                  ↑ mover para cima
-                </button>
-              </form>
-              <form action={reorderHomeSectionAction}>
-                <input type="hidden" name="currentKey" value={section.key} />
-                <input type="hidden" name="currentOrder" value={section.order} />
-                <input type="hidden" name="neighborKey" value={sections[i + 1]?.key} />
-                <input type="hidden" name="neighborOrder" value={sections[i + 1]?.order} />
-                <button type="submit" disabled={i === sections.length - 1} className="focus-ring disabled:opacity-30">
-                  ↓ mover para baixo
-                </button>
-              </form>
-            </div>
+            {section.key !== "hero" && (
+              <div className="mt-3 flex items-center gap-4 text-xs text-bark/60">
+                <form action={reorderHomeSectionAction}>
+                  <input type="hidden" name="currentKey" value={section.key} />
+                  <input type="hidden" name="currentOrder" value={section.order} />
+                  <input type="hidden" name="neighborKey" value={sections[i - 1]?.key} />
+                  <input type="hidden" name="neighborOrder" value={sections[i - 1]?.order} />
+                  <button
+                    type="submit"
+                    disabled={i <= 1 || sections[i - 1]?.key === "hero"}
+                    className="focus-ring disabled:opacity-30"
+                  >
+                    ↑ mover para cima
+                  </button>
+                </form>
+                <form action={reorderHomeSectionAction}>
+                  <input type="hidden" name="currentKey" value={section.key} />
+                  <input type="hidden" name="currentOrder" value={section.order} />
+                  <input type="hidden" name="neighborKey" value={sections[i + 1]?.key} />
+                  <input type="hidden" name="neighborOrder" value={sections[i + 1]?.order} />
+                  <button type="submit" disabled={i === sections.length - 1} className="focus-ring disabled:opacity-30">
+                    ↓ mover para baixo
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         ))}
       </div>

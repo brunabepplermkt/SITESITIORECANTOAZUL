@@ -88,11 +88,14 @@ export async function getAccommodations(opts: AccommodationOpts = {}): Promise<A
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
+    // Uma consulta bem-sucedida com zero linhas significa "nada publicado" —
+    // não "o Supabase falhou". Só cai para o seed em erro real de
+    // rede/cliente/configuração (ver bloco catch abaixo).
+    if (error) {
       return opts.includeUnpublished ? seedAccommodations : seedAccommodations.filter((a) => a.published);
     }
 
-    return data.map(
+    return (data ?? []).map(
       (row): Accommodation => ({
         slug: row.slug,
         name: row.name,
@@ -152,11 +155,11 @@ export async function getExperiences(opts: ExperienceOpts = {}): Promise<Experie
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
+    if (error) {
       return opts.includeUnpublished ? seedExperiences : seedExperiences.filter((e) => e.published);
     }
 
-    return data.map(
+    return (data ?? []).map(
       (row): Experience => ({
         slug: row.slug,
         name: row.name,
@@ -186,11 +189,11 @@ export async function getFaqs(opts: FaqOpts = {}): Promise<FaqItem[]> {
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
+    if (error) {
       return opts.includeUnpublished ? seedFaqs : seedFaqs.filter((f) => f.published);
     }
 
-    return data.map(
+    return (data ?? []).map(
       (row): FaqItem => ({
         id: row.id,
         question: row.question,
@@ -241,29 +244,45 @@ export async function getPublishedReviews(): Promise<Review[]> {
 }
 
 /**
+ * Ordena as seções por `order_index`, com uma única regra fixa: "hero"
+ * sempre vem primeiro quando visível, independente do valor salvo no banco.
+ * O Hero foi desenhado (altura de tela cheia, gradiente, texto sobre foto)
+ * para abrir a página — permitir que ele apareça no meio do layout quebraria
+ * visualmente a Home sem nenhum ganho real de flexibilidade. Por isso a
+ * reordenação no /admin não afeta a posição do Hero (ver `reorderHomeSectionAction`
+ * e a UI de `/admin/home`, que trava as setas de mover para essa seção).
+ */
+function orderHomeSections(sections: HomeSection[]): HomeSection[] {
+  const sorted = [...sections].sort((a, b) => a.order - b.order);
+  const hero = sorted.find((s) => s.key === "hero");
+  const rest = sorted.filter((s) => s.key !== "hero");
+  return hero ? [hero, ...rest] : rest;
+}
+
+/**
  * Seções da Home: título/subtítulo/texto/imagem/visibilidade/ordem
  * editáveis pelo /admin. A lista de chaves de seção é fixa no código
- * (não é um page-builder livre) — só o conteúdo e a ordem entre elas
- * são administráveis.
+ * (não é um page-builder livre) — só o conteúdo, a visibilidade e a ordem
+ * entre elas são administráveis.
  */
 export async function getHomeSections(opts: { includeHidden?: boolean } = {}): Promise<HomeSection[]> {
   if (!isSupabaseConfigured()) {
     const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
-    return [...sections].sort((a, b) => a.order - b.order);
+    return orderHomeSections(sections);
   }
 
   try {
     const supabase = createPublicClient();
     const { data, error } = await supabase.from("home_sections").select("*").order("order_index", { ascending: true });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
       const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
-      return [...sections].sort((a, b) => a.order - b.order);
+      return orderHomeSections(sections);
     }
 
     const seedByKey = new Map(seedHomeSections.map((s) => [s.key, s]));
 
-    const sections: HomeSection[] = data.map((row) => {
+    const sections: HomeSection[] = (data ?? []).map((row) => {
       const fallback = seedByKey.get(row.key);
       return {
         key: row.key,
@@ -279,10 +298,11 @@ export async function getHomeSections(opts: { includeHidden?: boolean } = {}): P
       };
     });
 
-    return opts.includeHidden ? sections : sections.filter((s) => s.visible);
+    const visible = opts.includeHidden ? sections : sections.filter((s) => s.visible);
+    return orderHomeSections(visible);
   } catch {
     const sections = opts.includeHidden ? seedHomeSections : seedHomeSections.filter((s) => s.visible);
-    return [...sections].sort((a, b) => a.order - b.order);
+    return orderHomeSections(sections);
   }
 }
 

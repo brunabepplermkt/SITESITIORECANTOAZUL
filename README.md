@@ -51,11 +51,28 @@ Nunca commitar `.env` ou `.env.local`.
    segurança (RLS) só liberam escrita para e-mails cadastrados em `admin_users`.
    Isso existe porque, por padrão, o Supabase permite que qualquer visitante crie
    uma conta sozinho; sem essa lista de permissão, um cadastro externo conseguiria
-   editar o site só por estar "autenticado".
+   editar o site só por estar "autenticado". O painel `/admin` também verifica
+   isso: um usuário autenticado que não está em `admin_users` é redirecionado
+   para o login com sua sessão encerrada, em vez de conseguir abrir as telas do
+   painel (mesmo sem conseguir salvar nada).
 6. Preencha as variáveis de ambiente com a URL e as chaves do projeto.
 7. Recomendado (reforço extra de segurança): em *Authentication → Sign In / Providers →
    Email*, desative o cadastro público ("Allow new users to sign up"), já que este
    site tem um único administrador e novas contas nunca deveriam ser necessárias.
+
+## Segurança (resumo)
+
+- **Leitura pública é sempre filtrada por `published = true`** em
+  `accommodations`, `experiences`, `faqs`, `reviews` e `pages` — tanto na policy
+  de RLS (defesa no banco) quanto na camada de leitura do site
+  (`src/lib/data.ts`). Conteúdo despublicado nunca aparece nem pela UI nem
+  consultando a API REST do Supabase diretamente.
+- **Escrita é sempre restrita a `admin_users`**, via a função `is_admin()`
+  (`security definer`), usada pelas policies de RLS. As policies de
+  administração valem só para o papel `authenticated` — o papel `anon` (visitante
+  não logado) nunca precisa nem consegue executar `is_admin()`.
+- **`service_role`** nunca é usado no navegador — só nas rotas de servidor que
+  o exigirem explicitamente (nenhuma hoje).
 
 ## Painel administrativo
 
@@ -64,11 +81,19 @@ Acesse `/admin` para editar, sem mexer em código:
 - **Página inicial** (`/admin/home`) — título/subtítulo/texto/imagem/botão de cada
   bloco da Home (Hero, Apresentação, Acomodações, O Sítio, Experiências, Avaliações,
   CTA final), visibilidade e ordem entre eles. A lista de blocos é fixa — não é um
-  page-builder livre — para o design nunca quebrar.
+  page-builder livre — para o design nunca quebrar. A Home renderiza os blocos
+  visíveis na ordem salva. Exceção deliberada: o **Hero sempre abre a página**,
+  qualquer que seja o valor salvo para ele — o Hero foi desenhado para ocupar o
+  topo (altura de tela cheia, texto sobre foto) e permitir que apareça no meio do
+  layout só quebraria a página sem ganho real; por isso as setas de reordenar dessa
+  linha ficam desativadas no painel.
 - **Acomodações** — nome, descrições, capacidade detalhada (adultos/crianças/
   camas/quartos/banheiros), diferenciais, comodidades, preço, fotos (upload,
-  reordenar, definir capa, editar texto alternativo), publicar/despublicar,
-  destaque e ordem na Home, e SEO por acomodação.
+  reordenar, definir capa, editar texto alternativo — excluir uma foto também
+  remove o arquivo do Storage, não só o registro), publicar/despublicar, destaque
+  e ordem na Home (a Home usa exatamente esses dois campos para decidir o que
+  mostrar — sem nenhuma marcada como destaque, a seção de Acomodações some da
+  Home), e SEO por acomodação (usado de verdade no `<head>` da página).
 - **Experiências, Avaliações, FAQ, Páginas, Políticas** — criar, editar, reordenar,
   publicar/despublicar.
 - **Configurações → Contato** — WhatsApp, telefone, e-mail, Instagram, endereço e
@@ -125,6 +150,22 @@ a configuração de `/admin/configuracoes/reservas` (tabela `site_settings`):
 Trocar de motor é 100% uma mudança de configuração em `/admin` — nunca requer
 alterar código ou fazer novo deploy.
 
+Um provider só é considerado "ativo" (e mostra botões de reserva) quando existe
+uma URL utilizável de verdade para o modo escolhido — nunca um botão apontando
+para `href="#"`.
+
+### Busca de reserva e widget embutido
+
+- **`BookingSearch`** (`src/components/booking-search.tsx`): campos de check-in,
+  check-out, adultos e crianças; ao buscar, monta a URL via `getBookingHref` e abre
+  o motor configurado. Aparece na Home quando "Mostrar busca de datas na Home"
+  está ligado, e na página de cada acomodação quando "Mostrar busca nas
+  acomodações" está ligado (Configurações → Reservas).
+- **`BookingWidget`** (`src/components/booking-widget.tsx`): um `<iframe>`
+  controlado, renderizado só quando o motor é "Widget/calendário embutido" e a URL
+  configurada é `https`. Nunca executa HTML/JS arbitrário — só carrega a URL
+  configurada, com `sandbox` restrito.
+
 ### Parâmetros de busca (deep-link)
 
 `getBookingHref()` sabe montar a URL com `checkin`, `checkout`, `adultos`,
@@ -152,9 +193,15 @@ Fora de escopo nesta fase (arquitetura apenas, sem implementação):
 
 `src/lib/analytics.ts` expõe `trackEvent()`, que empilha eventos em
 `window.dataLayer` (padrão já lido por Google Analytics/GTM e a maioria dos
-pixels). Eventos previstos: `booking_search`, `booking_click`, `whatsapp_click`,
-`accommodation_view`, `review_interaction`. Nenhum ID de rastreamento é hardcoded —
-vem de `/admin/configuracoes/integracoes` quando preenchido.
+pixels). Eventos disparados hoje: `booking_click` (todo botão "Reservar" do
+site), `whatsapp_click` (botão de WhatsApp em Contato), `accommodation_view`
+(ao abrir uma página de acomodação), `review_interaction` (clique em um card de
+avaliação) e `booking_search` (busca no `BookingSearch`).
+
+Quando os IDs de Google Analytics/Meta Pixel são preenchidos em Configurações →
+Integrações, `src/components/analytics-scripts.tsx` carrega o `gtag.js`/Meta
+Pixel automaticamente; com os campos em branco, nenhum script de rastreamento é
+carregado.
 
 ## Estrutura do projeto
 

@@ -1,4 +1,7 @@
+"use client";
+
 import type { Review } from "@/lib/types";
+import { trackEvent } from "@/lib/analytics";
 
 const SOURCE_LABELS: Record<Review["source"], string> = {
   airbnb: "Airbnb",
@@ -29,6 +32,7 @@ export function ReviewsSection({ reviews }: { reviews: Review[] }) {
         {reviews.map((review) => (
           <article
             key={review.id}
+            onClick={() => trackEvent("review_interaction", { reviewId: review.id, source: review.source })}
             className="w-[85vw] shrink-0 snap-start rounded-sm border border-bark/10 bg-white/60 p-7 sm:w-[26rem]"
           >
             <p className="font-serif text-3xl leading-none text-clay/70" aria-hidden="true">
